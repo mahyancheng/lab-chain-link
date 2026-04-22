@@ -127,9 +127,6 @@ function Landing() {
             <Link to="/auth">
               <Button size="lg">Place an order</Button>
             </Link>
-            <Link to={dest as "/portal"}>
-              <Button size="lg" variant="outline">
-                {user ? "Open portal" : "Sign in"}
               </Button>
             </Link>
           </div>
