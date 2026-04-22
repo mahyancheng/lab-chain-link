@@ -70,11 +70,11 @@ function SampleDetail() {
       const { data: rep } = await supabase
         .from("attachments").select("*").eq("sample_id", s.id).in("kind", ["report", "external_cert"]).order("created_at", { ascending: false });
       setReports(rep ?? []);
-      const { data: ev } = await supabase
+      const { data: coc } = await supabase
         .from("chain_of_custody_events").select("*")
         .or(`sample_id.eq.${s.id},and(order_id.eq.${s.order_id},sample_id.is.null)`)
         .order("created_at");
-      setEvents(ev ?? []);
+      setEvents(coc ?? []);
       setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
       setCondition(s.intake_condition ?? "");
       setIntakeNotes(s.intake_notes ?? "");
