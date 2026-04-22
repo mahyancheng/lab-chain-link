@@ -212,7 +212,7 @@ export function SupportChat({
                   className={cn(
                     "max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
                     m.internal
-                      ? "border border-amber-300/40 bg-amber-100/30 text-foreground"
+                      ? "border border-dashed border-muted-foreground/40 bg-muted/60 text-foreground"
                       : mine
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground",
