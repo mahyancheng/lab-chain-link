@@ -114,8 +114,7 @@ function Landing() {
             Lab operations platform
           </span>
           <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-foreground md:text-5xl">
-            From order to released report —{" "}
-            <span className="text-primary">tracked end to end.</span>
+            <SplitText>From order to released report — tracked end to end.</SplitText>
           </h1>
           <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
             QR-coded chain of custody for every fertilizer and raw material sample.

@@ -72,7 +72,7 @@ function ScanPage() {
 
   return (
     <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">
-      <h1 className="mb-6 text-2xl font-bold">Scan QR</h1>
+      <h1 className="mb-6 text-2xl font-bold"><SplitText>Scan QR</SplitText></h1>
       <Card className="space-y-4 p-5">
         <div>
           <label className="text-sm">Manual entry</label>
