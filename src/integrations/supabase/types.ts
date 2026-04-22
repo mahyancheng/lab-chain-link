@@ -784,6 +784,12 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      list_customer_ids: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "customer" | "lab" | "admin"

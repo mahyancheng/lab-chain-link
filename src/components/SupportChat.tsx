@@ -73,17 +73,17 @@ export function SupportChat({
   className?: string;
 }) {
   const { user, roles } = useAuth();
-  const isStaff = roles.includes("admin") || roles.includes("lab");
-  const myRole: Role = roles.includes("admin")
-    ? "admin"
-    : roles.includes("lab")
-      ? "lab"
-      : "customer";
+  const isAdmin = roles.includes("admin");
+  const isLab = roles.includes("lab") && !isAdmin;
+  const isStaff = isAdmin || isLab;
+  const myRole: Role = isAdmin ? "admin" : isLab ? "lab" : "customer";
+  // Lab staff can only post internal notes, not customer-visible replies.
+  const lockInternal = isLab;
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [orders, setOrders] = useState<OrderLite[]>([]);
   const [draft, setDraft] = useState("");
-  const [internal, setInternal] = useState(false);
+  const [internal, setInternal] = useState(lockInternal);
   const [sending, setSending] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -158,7 +158,7 @@ export function SupportChat({
       author_id: user.id,
       author_role: myRole,
       body,
-      internal: isStaff ? internal : false,
+      internal: isStaff ? (lockInternal ? true : internal) : false,
     });
     setSending(false);
     if (error) {
@@ -173,16 +173,20 @@ export function SupportChat({
   }
 
   return (
-    <Card className={cn("flex h-[600px] flex-col overflow-hidden", className)}>
-      <header className="flex items-center justify-between border-b bg-card/60 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">
+    <Card className={cn("flex h-full min-h-0 flex-col overflow-hidden", className)}>
+      <header className="flex items-center justify-between gap-2 border-b bg-card/60 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <MessageSquare className="h-4 w-4 shrink-0 text-primary" />
+          <span className="truncate text-sm font-semibold">
             {isStaff ? `Conversation · ${customerName ?? "Customer"}` : "Support"}
           </span>
         </div>
-        <span className="text-[11px] text-muted-foreground">
-          {isStaff ? "Visible to customer unless marked internal" : "Replies typically within 1 business day"}
+        <span className="hidden text-[11px] text-muted-foreground sm:inline">
+          {isLab
+            ? "Lab notes are internal-only"
+            : isStaff
+              ? "Visible to customer unless marked internal"
+              : "Replies typically within 1 business day"}
         </span>
       </header>
 
@@ -255,9 +259,14 @@ export function SupportChat({
           )}
           {isStaff && (
             <div className="ml-auto flex items-center gap-2">
-              <Switch id="internal-toggle" checked={internal} onCheckedChange={setInternal} />
+              <Switch
+                id="internal-toggle"
+                checked={internal}
+                onCheckedChange={setInternal}
+                disabled={lockInternal}
+              />
               <Label htmlFor="internal-toggle" className="cursor-pointer text-xs text-muted-foreground">
-                Internal note (staff only)
+                {lockInternal ? "Internal note (lab)" : "Internal note (staff only)"}
               </Label>
             </div>
           )}

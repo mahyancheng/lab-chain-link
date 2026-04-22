@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { SupportChatWidget } from "@/components/SupportChatWidget";
 import { Button } from "@/components/ui/button";
 import { SplitText } from "@/components/ui/split-text";
 import {
@@ -130,13 +131,14 @@ export function PortalShell({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-card/80 px-4 backdrop-blur-md">
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-card/80 px-3 backdrop-blur-md sm:px-4">
           <SidebarTrigger />
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="truncate text-sm font-medium text-muted-foreground">
             <SplitText stagger={0.015}>{title}</SplitText>
           </span>
         </header>
-        <main className="mx-auto w-full max-w-7xl px-6 py-8 animate-fade-in">{children}</main>
+        <main className="mx-auto w-full max-w-7xl px-3 py-4 animate-fade-in sm:px-6 sm:py-8">{children}</main>
+        {requireRole === "customer" && <SupportChatWidget />}
       </SidebarInset>
     </SidebarProvider>
   );

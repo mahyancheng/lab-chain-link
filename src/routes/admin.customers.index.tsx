@@ -61,36 +61,33 @@ function CustomersList() {
 
   useEffect(() => {
     (async () => {
-      // Fetch customer profiles (only those with the customer role) + aggregates client-side.
-      const [rolesRes, profilesRes, ordersRes, exRes] = await Promise.all([
-        supabase.from("user_roles").select("user_id").eq("role", "customer"),
+      // Use SECURITY DEFINER fn so staff (lab + admin) can list customer ids
+      // without needing a permissive SELECT policy on user_roles.
+      const [idsRes, profilesRes, ordersRes, exRes] = await Promise.all([
+        supabase.rpc("list_customer_ids"),
         supabase.from("profiles").select("id, full_name, company, phone, created_at"),
         supabase
           .from("orders")
-          .select("customer_id, created_at")
+          .select("id, customer_id, created_at")
           .order("created_at", { ascending: false }),
         supabase.from("exceptions").select("order_id, status").eq("status", "open"),
       ]);
 
-      const customerIds = new Set((rolesRes.data ?? []).map((r) => r.user_id));
+      const customerIds = new Set(
+        ((idsRes.data ?? []) as { user_id: string }[]).map((r) => r.user_id),
+      );
       const profileMap = new Map(
         (profilesRes.data ?? []).map((p) => [p.id, p]),
       );
       const orderAgg = new Map<string, { count: number; last: string | null }>();
+      const orderToCustomer = new Map<string, string>();
       (ordersRes.data ?? []).forEach((o) => {
+        orderToCustomer.set(o.id, o.customer_id);
         const cur = orderAgg.get(o.customer_id) ?? { count: 0, last: null };
         cur.count++;
         if (!cur.last || new Date(o.created_at) > new Date(cur.last)) cur.last = o.created_at;
         orderAgg.set(o.customer_id, cur);
       });
-
-      // Open exceptions per customer (need order→customer map)
-      const orderToCustomer = new Map<string, string>();
-      (ordersRes.data ?? []).forEach((o: any) => orderToCustomer.set(o.id, o.customer_id));
-      const { data: ordersFull } = await supabase
-        .from("orders")
-        .select("id, customer_id");
-      (ordersFull ?? []).forEach((o) => orderToCustomer.set(o.id, o.customer_id));
       const exByCustomer = new Map<string, number>();
       (exRes.data ?? []).forEach((e) => {
         const cid = e.order_id ? orderToCustomer.get(e.order_id) : null;
