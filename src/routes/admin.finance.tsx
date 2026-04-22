@@ -69,7 +69,7 @@ function Finance() {
 
       <Card className="mb-6 p-5">
         <div className="text-sm text-muted-foreground">Lifetime revenue (paid)</div>
-        <div className="mt-1 text-3xl font-bold">₹{total.toFixed(2)}</div>
+        <div className="mt-1 text-3xl font-bold">RM{total.toFixed(2)}</div>
       </Card>
 
       <Card className="p-5">
@@ -82,7 +82,7 @@ function Finance() {
                 <div className="text-xs text-muted-foreground">{p.provider_ref}</div>
               </div>
               <div className="flex items-center gap-3">
-                <span>₹{Number(p.amount).toFixed(2)}</span>
+                <span>RM{Number(p.amount).toFixed(2)}</span>
                 <Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge>
                 <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
               </div>

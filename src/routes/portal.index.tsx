@@ -66,7 +66,7 @@ function PortalHome() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-medium">₹{Number(o.total).toFixed(2)}</span>
+                  <span className="font-medium">RM{Number(o.total).toFixed(2)}</span>
                   <Badge variant="secondary">{STAGE_LABEL[o.stage] ?? o.stage}</Badge>
                 </div>
               </Card>
