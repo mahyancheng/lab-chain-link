@@ -1,30 +1,43 @@
 import { STAGE_LABEL, ORDER_STAGES, stageIndex } from "@/lib/stages";
-import { Check } from "lucide-react";
+import { Timeline, type TimelineItem } from "@/components/ui/timeline";
 
-export function StageTimeline({ currentStage }: { currentStage: string }) {
+interface StageTimelineProps {
+  currentStage: string;
+  events?: Array<{
+    id: string;
+    event_type: string;
+    description?: string | null;
+    created_at: string;
+    metadata?: Record<string, unknown> | null;
+  }>;
+}
+
+export function StageTimeline({ currentStage, events }: StageTimelineProps) {
   const idx = stageIndex(currentStage);
-  return (
-    <ol className="space-y-3">
-      {ORDER_STAGES.map((s, i) => {
-        const done = i <= idx;
-        const isCurrent = i === idx;
-        return (
-          <li key={s} className="flex items-center gap-3">
-            <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
-                done
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {done ? <Check className="h-4 w-4" /> : i + 1}
-            </span>
-            <span className={`text-sm ${isCurrent ? "font-semibold" : done ? "" : "text-muted-foreground"}`}>
-              {STAGE_LABEL[s]}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
+
+  // Map each canonical order stage to its most recent matching event (if any)
+  const eventByStage = new Map<string, { description?: string | null; created_at: string }>();
+  if (events) {
+    for (const e of events) {
+      // Try to match event_type to a stage key
+      if (ORDER_STAGES.includes(e.event_type as (typeof ORDER_STAGES)[number])) {
+        eventByStage.set(e.event_type, { description: e.description, created_at: e.created_at });
+      }
+    }
+  }
+
+  const items: TimelineItem[] = ORDER_STAGES.map((s, i) => {
+    const status: TimelineItem["status"] =
+      i < idx ? "completed" : i === idx ? "active" : "pending";
+    const ev = eventByStage.get(s);
+    return {
+      id: s,
+      title: STAGE_LABEL[s] ?? s,
+      description: ev?.description ?? undefined,
+      timestamp: ev?.created_at,
+      status,
+    };
+  });
+
+  return <Timeline items={items} variant="compact" timestampPosition="inline" />;
 }

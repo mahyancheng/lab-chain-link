@@ -233,7 +233,7 @@ function OrderDetail() {
         <div className="space-y-6 lg:col-span-2">
           <Card className="p-5">
             <h2 className="mb-4 font-semibold">Chain of custody</h2>
-            <StageTimeline currentStage={order.stage} />
+            <StageTimeline currentStage={order.stage} events={events} />
           </Card>
 
           <Card className="p-5">
