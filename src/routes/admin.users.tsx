@@ -470,9 +470,7 @@ function AdminUsers() {
                         {authStatus[u.id]?.banned ? (
                           <Badge variant="destructive">Disabled</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-green-600">
-                            Active
-                          </Badge>
+                          <Badge variant="outline">Active</Badge>
                         )}
                       </TableCell>
                       <TableCell>
