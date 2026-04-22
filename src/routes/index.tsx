@@ -78,8 +78,6 @@ const STATS = [
 ];
 
 function Landing() {
-  const { user, roles } = useAuth();
-  const dest = user ? homeRouteFor(roles) : "/auth";
 
   return (
     <div className="min-h-screen bg-background">
