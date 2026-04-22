@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as LabIndexRouteImport } from './routes/lab.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PortalSupportRouteImport } from './routes/portal.support'
 import { Route as PortalNewRouteImport } from './routes/portal.new'
 import { Route as LabScanRouteImport } from './routes/lab.scan'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -48,6 +49,11 @@ const LabIndexRoute = LabIndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalSupportRoute = PortalSupportRouteImport.update({
+  id: '/portal/support',
+  path: '/portal/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalNewRoute = PortalNewRouteImport.update({
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
+  '/portal/support': typeof PortalSupportRoute
   '/admin/': typeof AdminIndexRoute
   '/lab/': typeof LabIndexRoute
   '/portal/': typeof PortalIndexRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
+  '/portal/support': typeof PortalSupportRoute
   '/admin': typeof AdminIndexRoute
   '/lab': typeof LabIndexRoute
   '/portal': typeof PortalIndexRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
+  '/portal/support': typeof PortalSupportRoute
   '/admin/': typeof AdminIndexRoute
   '/lab/': typeof LabIndexRoute
   '/portal/': typeof PortalIndexRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
+    | '/portal/support'
     | '/admin/'
     | '/lab/'
     | '/portal/'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
+    | '/portal/support'
     | '/admin'
     | '/lab'
     | '/portal'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
+    | '/portal/support'
     | '/admin/'
     | '/lab/'
     | '/portal/'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   LabScanRoute: typeof LabScanRoute
   PortalNewRoute: typeof PortalNewRoute
+  PortalSupportRoute: typeof PortalSupportRoute
   AdminIndexRoute: typeof AdminIndexRoute
   LabIndexRoute: typeof LabIndexRoute
   PortalIndexRoute: typeof PortalIndexRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/support': {
+      id: '/portal/support'
+      path: '/portal/support'
+      fullPath: '/portal/support'
+      preLoaderRoute: typeof PortalSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/new': {
@@ -344,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   LabScanRoute: LabScanRoute,
   PortalNewRoute: PortalNewRoute,
+  PortalSupportRoute: PortalSupportRoute,
   AdminIndexRoute: AdminIndexRoute,
   LabIndexRoute: LabIndexRoute,
   PortalIndexRoute: PortalIndexRoute,
@@ -356,3 +377,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
