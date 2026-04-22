@@ -421,24 +421,26 @@ function AdminUsers() {
                 <TableHead>Company</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Joined</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Current roles</TableHead>
                 {ALL_ROLES.map((r) => (
                   <TableHead key={r} className="text-center capitalize">
                     {r}
                   </TableHead>
                 ))}
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     No users found
                   </TableCell>
                 </TableRow>
