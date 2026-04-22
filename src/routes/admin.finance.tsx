@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { ChevronRight, Download } from "lucide-react";
 import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/admin/finance")({
@@ -76,19 +76,35 @@ function Finance() {
       <Card className="p-5">
         <h2 className="mb-3 font-semibold">Transactions</h2>
         <div className="space-y-2">
-          {payments.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
-              <div>
-                <div className="font-medium">{orders[p.order_id]?.order_number ?? p.order_id.slice(0, 8)}</div>
-                <div className="text-xs text-muted-foreground">{p.provider_ref}</div>
+          {payments.map((p) => {
+            const order = orders[p.order_id];
+            const row = (
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/40 p-4 text-sm transition-all duration-200 hover:-translate-y-px hover:border-accent/40 hover:bg-accent/10 hover:shadow-sm">
+                <div>
+                  <div className="font-medium">{order?.order_number ?? p.order_id.slice(0, 8)}</div>
+                  <div className="text-xs text-muted-foreground">{p.provider_ref}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">RM{Number(p.amount).toFixed(2)}</span>
+                  <Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge>
+                  <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
+                  {order && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span>RM{Number(p.amount).toFixed(2)}</span>
-                <Badge variant={p.status === "paid" ? "default" : "secondary"}>{p.status}</Badge>
-                <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-          ))}
+            );
+            return order ? (
+              <Link
+                key={p.id}
+                to="/portal/orders/$orderId"
+                params={{ orderId: p.order_id }}
+                className="block"
+              >
+                {row}
+              </Link>
+            ) : (
+              <div key={p.id}>{row}</div>
+            );
+          })}
           {payments.length === 0 && <p className="text-sm text-muted-foreground">No transactions yet.</p>}
         </div>
       </Card>
