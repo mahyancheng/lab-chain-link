@@ -91,7 +91,7 @@ export function SupportChatWidget() {
         aria-label={open ? "Close support chat" : "Open support chat"}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "absolute bottom-4 right-4 flex h-14 w-14 items-center justify-center rounded-full",
+          "absolute bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full sm:bottom-16 sm:right-6",
           "bg-primary text-primary-foreground shadow-lg ring-1 ring-primary/20",
           "transition-transform duration-200 hover:scale-105 active:scale-95",
         )}
