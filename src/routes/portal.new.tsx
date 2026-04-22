@@ -142,9 +142,9 @@ function NewOrder() {
       // 5. Stage -> paid + custody events
       await supabase.from("orders").update({ stage: "paid" }).eq("id", order.id);
       await supabase.from("chain_of_custody_events").insert([
-        { order_id: order.id, actor_id: user.id, event_type: "ordered", description: "Order placed" },
-        { order_id: order.id, actor_id: user.id, event_type: "paid", description: `Payment ${pay.paymentId}` },
-        { order_id: order.id, actor_id: user.id, event_type: "shipment_booked", description: `Lalamove ${booking.trackingId}` },
+        { order_id: order.id, actor_id: authedUser.id, event_type: "ordered", description: "Order placed" },
+        { order_id: order.id, actor_id: authedUser.id, event_type: "paid", description: `Payment ${pay.paymentId}` },
+        { order_id: order.id, actor_id: authedUser.id, event_type: "shipment_booked", description: `Lalamove ${booking.trackingId}` },
       ]);
 
       toast.success("Order placed!");
