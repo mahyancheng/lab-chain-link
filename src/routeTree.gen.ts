@@ -16,6 +16,7 @@ import { Route as LabIndexRouteImport } from './routes/lab.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PortalNewRouteImport } from './routes/portal.new'
 import { Route as LabScanRouteImport } from './routes/lab.scan'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
 import { Route as PortalOrdersOrderIdRouteImport } from './routes/portal.orders.$orderId'
@@ -56,6 +57,11 @@ const LabScanRoute = LabScanRouteImport.update({
   path: '/lab/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
   id: '/admin/finance',
   path: '/admin/finance',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
   '/admin/': typeof AdminIndexRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
   '/admin': typeof AdminIndexRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/admin/config': typeof AdminConfigRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
   '/admin/': typeof AdminIndexRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin/config'
     | '/admin/finance'
+    | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
     | '/admin/'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin/config'
     | '/admin/finance'
+    | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
     | '/admin'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin/config'
     | '/admin/finance'
+    | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
     | '/admin/'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AdminConfigRoute: typeof AdminConfigRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   LabScanRoute: typeof LabScanRoute
   PortalNewRoute: typeof PortalNewRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -224,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabScanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/finance': {
       id: '/admin/finance'
       path: '/admin/finance'
@@ -260,6 +280,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AdminConfigRoute: AdminConfigRoute,
   AdminFinanceRoute: AdminFinanceRoute,
+  AdminUsersRoute: AdminUsersRoute,
   LabScanRoute: LabScanRoute,
   PortalNewRoute: PortalNewRoute,
   AdminIndexRoute: AdminIndexRoute,

@@ -17,6 +17,7 @@ export const Route = createFileRoute("/admin/")({
 
 const NAV = [
   { to: "/admin", label: "Operations" },
+  { to: "/admin/users", label: "Users" },
   { to: "/admin/finance", label: "Finance" },
   { to: "/admin/config", label: "Configuration" },
 ];
