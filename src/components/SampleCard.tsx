@@ -4,8 +4,10 @@ import type React from "react";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { STAGE_LABEL } from "@/lib/stages";
-import { ChevronDown, FlaskConical, QrCode } from "lucide-react";
+import { ChevronDown, Download, Eye, FlaskConical, QrCode } from "lucide-react";
+import { downloadSampleReportPdf, openSampleReportPdf } from "@/lib/sample-report-pdf";
 
 interface SampleCardProps {
   label: string;
@@ -20,6 +22,13 @@ interface SampleCardProps {
   tatDays?: number | null;
   qrDataUrl?: string;
   sampleId: string;
+  orderNumber?: string | null;
+  results?: Array<{
+    name: string;
+    unit?: string | null;
+    value?: string | number | null;
+    passed?: boolean | null;
+  }>;
   intake?: { disposition?: string; weightG?: number | null; condition?: string | null; notes?: string | null } | null;
 }
 
