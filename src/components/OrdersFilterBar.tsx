@@ -25,7 +25,7 @@ export function OrdersFilterBar({
   value,
   onChange,
   stages,
-  searchPlaceholder = "Search by order # or label…",
+  searchPlaceholder = "Search by order #, status, notes…",
   className,
 }: {
   value: OrdersFilterValue;
@@ -109,19 +109,37 @@ export function OrdersFilterBar({
   );
 }
 
-export function filterOrders<T extends { order_number: string; stage: string; created_at: string }>(
-  rows: T[],
-  f: OrdersFilterValue,
-): T[] {
+export function filterOrders<
+  T extends {
+    order_number: string;
+    stage: string;
+    created_at: string;
+    delivery_type?: string | null;
+    notes?: string | null;
+    total?: number | string | null;
+  },
+>(rows: T[], f: OrdersFilterValue): T[] {
   const q = f.q.trim().toLowerCase();
   const fromTs = f.from ? new Date(f.from + "T00:00:00").getTime() : null;
   const toTs = f.to ? new Date(f.to + "T23:59:59.999").getTime() : null;
   return rows.filter((r) => {
-    if (q && !r.order_number.toLowerCase().includes(q)) return false;
     if (f.stage !== "all" && r.stage !== f.stage) return false;
     const t = new Date(r.created_at).getTime();
     if (fromTs !== null && t < fromTs) return false;
     if (toTs !== null && t > toTs) return false;
+    if (q) {
+      const hay = [
+        r.order_number,
+        r.stage,
+        STAGE_LABEL[r.stage] ?? "",
+        r.delivery_type ?? "",
+        r.notes ?? "",
+        r.total != null ? String(r.total) : "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 }
