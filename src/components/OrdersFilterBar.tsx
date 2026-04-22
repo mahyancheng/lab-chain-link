@@ -25,7 +25,7 @@ export function OrdersFilterBar({
   value,
   onChange,
   stages,
-  searchPlaceholder = "Search by order # or label…",
+  searchPlaceholder = "Search by order #, status, notes…",
   className,
 }: {
   value: OrdersFilterValue;
