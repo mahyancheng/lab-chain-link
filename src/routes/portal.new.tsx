@@ -23,7 +23,6 @@ export const Route = createFileRoute("/portal/new")({
 const NAV = [
   { to: "/portal", label: "My orders" },
   { to: "/portal/new", label: "New order" },
-  { to: "/portal/support", label: "Support" },
 ];
 
 interface SampleRow {

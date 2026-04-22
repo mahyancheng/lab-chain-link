@@ -19,7 +19,6 @@ export const Route = createFileRoute("/portal/")({
 const NAV = [
   { to: "/portal", label: "My orders" },
   { to: "/portal/new", label: "New order" },
-  { to: "/portal/support", label: "Support" },
 ];
 
 function PortalHome() {
