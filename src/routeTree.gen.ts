@@ -9,38 +9,179 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as LabIndexRouteImport } from './routes/lab.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PortalNewRouteImport } from './routes/portal.new'
+import { Route as LabScanRouteImport } from './routes/lab.scan'
+import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
+import { Route as AdminConfigRouteImport } from './routes/admin.config'
+import { Route as PortalOrdersOrderIdRouteImport } from './routes/portal.orders.$orderId'
+import { Route as LabSamplesSampleIdRouteImport } from './routes/lab.samples.$sampleId'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabIndexRoute = LabIndexRouteImport.update({
+  id: '/lab/',
+  path: '/lab/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalNewRoute = PortalNewRouteImport.update({
+  id: '/portal/new',
+  path: '/portal/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabScanRoute = LabScanRouteImport.update({
+  id: '/lab/scan',
+  path: '/lab/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/admin/finance',
+  path: '/admin/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminConfigRoute = AdminConfigRouteImport.update({
+  id: '/admin/config',
+  path: '/admin/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalOrdersOrderIdRoute = PortalOrdersOrderIdRouteImport.update({
+  id: '/portal/orders/$orderId',
+  path: '/portal/orders/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabSamplesSampleIdRoute = LabSamplesSampleIdRouteImport.update({
+  id: '/lab/samples/$sampleId',
+  path: '/lab/samples/$sampleId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/admin/config': typeof AdminConfigRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/lab/scan': typeof LabScanRoute
+  '/portal/new': typeof PortalNewRoute
+  '/admin/': typeof AdminIndexRoute
+  '/lab/': typeof LabIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
+  '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/admin/config': typeof AdminConfigRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/lab/scan': typeof LabScanRoute
+  '/portal/new': typeof PortalNewRoute
+  '/admin': typeof AdminIndexRoute
+  '/lab': typeof LabIndexRoute
+  '/portal': typeof PortalIndexRoute
+  '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
+  '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/admin/config': typeof AdminConfigRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/lab/scan': typeof LabScanRoute
+  '/portal/new': typeof PortalNewRoute
+  '/admin/': typeof AdminIndexRoute
+  '/lab/': typeof LabIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
+  '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin/config'
+    | '/admin/finance'
+    | '/lab/scan'
+    | '/portal/new'
+    | '/admin/'
+    | '/lab/'
+    | '/portal/'
+    | '/lab/samples/$sampleId'
+    | '/portal/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin/config'
+    | '/admin/finance'
+    | '/lab/scan'
+    | '/portal/new'
+    | '/admin'
+    | '/lab'
+    | '/portal'
+    | '/lab/samples/$sampleId'
+    | '/portal/orders/$orderId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/admin/config'
+    | '/admin/finance'
+    | '/lab/scan'
+    | '/portal/new'
+    | '/admin/'
+    | '/lab/'
+    | '/portal/'
+    | '/lab/samples/$sampleId'
+    | '/portal/orders/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  AdminConfigRoute: typeof AdminConfigRoute
+  AdminFinanceRoute: typeof AdminFinanceRoute
+  LabScanRoute: typeof LabScanRoute
+  PortalNewRoute: typeof PortalNewRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  LabIndexRoute: typeof LabIndexRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  LabSamplesSampleIdRoute: typeof LabSamplesSampleIdRoute
+  PortalOrdersOrderIdRoute: typeof PortalOrdersOrderIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,21 +189,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab/': {
+      id: '/lab/'
+      path: '/lab'
+      fullPath: '/lab/'
+      preLoaderRoute: typeof LabIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/new': {
+      id: '/portal/new'
+      path: '/portal/new'
+      fullPath: '/portal/new'
+      preLoaderRoute: typeof PortalNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab/scan': {
+      id: '/lab/scan'
+      path: '/lab/scan'
+      fullPath: '/lab/scan'
+      preLoaderRoute: typeof LabScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/admin/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/config': {
+      id: '/admin/config'
+      path: '/admin/config'
+      fullPath: '/admin/config'
+      preLoaderRoute: typeof AdminConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/orders/$orderId': {
+      id: '/portal/orders/$orderId'
+      path: '/portal/orders/$orderId'
+      fullPath: '/portal/orders/$orderId'
+      preLoaderRoute: typeof PortalOrdersOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab/samples/$sampleId': {
+      id: '/lab/samples/$sampleId'
+      path: '/lab/samples/$sampleId'
+      fullPath: '/lab/samples/$sampleId'
+      preLoaderRoute: typeof LabSamplesSampleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  AdminConfigRoute: AdminConfigRoute,
+  AdminFinanceRoute: AdminFinanceRoute,
+  LabScanRoute: LabScanRoute,
+  PortalNewRoute: PortalNewRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  LabIndexRoute: LabIndexRoute,
+  PortalIndexRoute: PortalIndexRoute,
+  LabSamplesSampleIdRoute: LabSamplesSampleIdRoute,
+  PortalOrdersOrderIdRoute: PortalOrdersOrderIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
