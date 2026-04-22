@@ -12,18 +12,35 @@ import { qrDataUrl } from "@/lib/qr";
 import { Download, ArrowLeft, CheckCircle2, Package } from "lucide-react";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/portal/orders/$orderId")({
-  component: () => <RoleGuard allow={["customer", "admin"]}><OrderDetail /></RoleGuard>,
+  component: () => <RoleGuard allow={["customer", "admin", "lab"]}><OrderDetail /></RoleGuard>,
 });
 
-const NAV = [
+const CUSTOMER_NAV = [
   { to: "/portal", label: "My orders" },
   { to: "/portal/new", label: "New order" },
+];
+const ADMIN_NAV = [
+  { to: "/admin", label: "Operations" },
+  { to: "/admin/finance", label: "Finance" },
+  { to: "/admin/config", label: "Configuration" },
+  { to: "/lab", label: "Lab workspace" },
+];
+const LAB_NAV = [
+  { to: "/lab", label: "Queue" },
+  { to: "/lab/scan", label: "Scan" },
 ];
 
 function OrderDetail() {
   const { orderId } = Route.useParams();
+  const { roles } = useAuth();
+  const isAdmin = roles.includes("admin");
+  const isLab = roles.includes("lab");
+  const NAV = isAdmin ? ADMIN_NAV : isLab ? LAB_NAV : CUSTOMER_NAV;
+  const SHELL_TITLE = isAdmin ? "Admin Portal" : isLab ? "Lab Workspace" : "Customer Portal";
+  const BACK_TO = isAdmin ? "/admin" : isLab ? "/lab" : "/portal";
   const [order, setOrder] = useState<any>(null);
   const [samples, setSamples] = useState<any[]>([]);
   const [products, setProducts] = useState<Record<string, any>>({});
