@@ -64,6 +64,9 @@ function SampleDetail() {
       const { data: ev } = await supabase
         .from("attachments").select("*").eq("sample_id", s.id).eq("kind", "evidence");
       setEvidence(ev ?? []);
+      const { data: rep } = await supabase
+        .from("attachments").select("*").eq("sample_id", s.id).in("kind", ["report", "external_cert"]).order("created_at", { ascending: false });
+      setReports(rep ?? []);
       setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
       setCondition(s.intake_condition ?? "");
       setIntakeNotes(s.intake_notes ?? "");
