@@ -16,7 +16,6 @@ const NAV = [
   { to: "/admin", label: "Operations" },
   { to: "/admin/finance", label: "Finance" },
   { to: "/admin/config", label: "Configuration" },
-  { to: "/lab", label: "Lab workspace" },
 ];
 
 function Finance() {
