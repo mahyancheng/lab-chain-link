@@ -1,5 +1,10 @@
-import { jsPDF } from "jspdf";
+import type { jsPDF as JsPdfType } from "jspdf";
 import { STAGE_LABEL } from "@/lib/stages";
+
+async function loadJsPdf() {
+  const mod = await import("jspdf");
+  return mod.jsPDF ?? (mod as unknown as { default: typeof mod.jsPDF }).default;
+}
 
 export interface SampleReportPdfInput {
   label: string;
@@ -23,8 +28,9 @@ export interface SampleReportPdfInput {
   }>;
 }
 
-function buildPdf(data: SampleReportPdfInput): jsPDF {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+async function buildPdf(data: SampleReportPdfInput): Promise<JsPdfType> {
+  const JsPdfCtor = await loadJsPdf();
+  const doc = new JsPdfCtor({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 48;
   let y = margin;
@@ -152,14 +158,14 @@ function buildPdf(data: SampleReportPdfInput): jsPDF {
   return doc;
 }
 
-export function downloadSampleReportPdf(data: SampleReportPdfInput) {
-  const doc = buildPdf(data);
+export async function downloadSampleReportPdf(data: SampleReportPdfInput) {
+  const doc = await buildPdf(data);
   const safe = data.label.replace(/[^a-z0-9-_]+/gi, "_");
   doc.save(`${safe}_report.pdf`);
 }
 
-export function openSampleReportPdf(data: SampleReportPdfInput) {
-  const doc = buildPdf(data);
+export async function openSampleReportPdf(data: SampleReportPdfInput) {
+  const doc = await buildPdf(data);
   const url = doc.output("bloburl");
   window.open(url, "_blank", "noopener,noreferrer");
 }
