@@ -24,6 +24,7 @@ const CUSTOMER_NAV = [
 ];
 const ADMIN_NAV = [
   { to: "/admin", label: "Operations" },
+  { to: "/admin/users", label: "Users" },
   { to: "/admin/finance", label: "Finance" },
   { to: "/admin/config", label: "Configuration" },
 ];
