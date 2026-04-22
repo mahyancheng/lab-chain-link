@@ -127,8 +127,6 @@ function Landing() {
             <Link to="/auth">
               <Button size="lg">Place an order</Button>
             </Link>
-              </Button>
-            </Link>
           </div>
         </section>
 
