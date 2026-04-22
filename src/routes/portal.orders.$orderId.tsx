@@ -261,6 +261,16 @@ function OrderDetail() {
                     packagingInstructions={product?.packaging_instructions}
                     tatDays={product?.tat_days}
                     qrDataUrl={sampleQrs[s.id]}
+                    orderNumber={order.order_number}
+                    results={(results[s.id] ?? []).map((r) => {
+                      const p = parameters[r.parameter_id] ?? {};
+                      return {
+                        name: p.name ?? "—",
+                        unit: p.unit,
+                        value: r.value != null ? r.value : (r.text_value ?? null),
+                        passed: r.passed,
+                      };
+                    })}
                     intake={
                       isStaff && s.intake_at
                         ? {
