@@ -20,25 +20,16 @@ const CUSTOMER_NAV = [
   { to: "/portal", label: "My orders" },
   { to: "/portal/new", label: "New order" },
 ];
-const ADMIN_NAV = [
-  { to: "/admin", label: "Operations" },
-  { to: "/admin/users", label: "Users" },
-  { to: "/admin/finance", label: "Finance" },
-  { to: "/admin/config", label: "Configuration" },
-];
-const LAB_NAV = [
-  { to: "/lab", label: "Queue" },
-  { to: "/lab/scan", label: "Scan QR" },
-];
 
 function SampleReportPage() {
   const { sampleId } = Route.useParams();
   const { roles } = useAuth();
   const isAdmin = roles.includes("admin");
   const isLab = roles.includes("lab");
-  const nav = isAdmin ? ADMIN_NAV : isLab ? LAB_NAV : CUSTOMER_NAV;
-  const shellTitle = isAdmin ? "Admin Portal" : isLab ? "Lab Workspace" : "Customer Portal";
-  const backTo = isAdmin ? "/admin" : isLab ? "/lab" : "/portal";
+  // /portal route → always show the customer shell, even if user has staff roles.
+  const nav = CUSTOMER_NAV;
+  const shellTitle = "Customer Portal";
+  const backTo = "/portal";
 
   const [sample, setSample] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);

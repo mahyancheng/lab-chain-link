@@ -25,16 +25,6 @@ const CUSTOMER_NAV = [
   { to: "/portal", label: "My orders" },
   { to: "/portal/new", label: "New order" },
 ];
-const ADMIN_NAV = [
-  { to: "/admin", label: "Operations" },
-  { to: "/admin/users", label: "Users" },
-  { to: "/admin/finance", label: "Finance" },
-  { to: "/admin/config", label: "Configuration" },
-];
-const LAB_NAV = [
-  { to: "/lab", label: "Queue" },
-  { to: "/lab/scan", label: "Scan" },
-];
 
 function OrderDetail() {
   const { orderId } = Route.useParams();
@@ -42,9 +32,11 @@ function OrderDetail() {
   const isAdmin = roles.includes("admin");
   const isLab = roles.includes("lab");
   const isStaff = isAdmin || isLab;
-  const NAV = isAdmin ? ADMIN_NAV : isLab ? LAB_NAV : CUSTOMER_NAV;
-  const SHELL_TITLE = isAdmin ? "Admin Portal" : isLab ? "Lab Workspace" : "Customer Portal";
-  const BACK_TO = isAdmin ? "/admin" : isLab ? "/lab" : "/portal";
+  // This page lives under /portal — always render the customer shell,
+  // regardless of any extra staff roles the user may also hold.
+  const NAV = CUSTOMER_NAV;
+  const SHELL_TITLE = "Customer Portal";
+  const BACK_TO = "/portal";
   const [order, setOrder] = useState<any>(null);
   const [samples, setSamples] = useState<any[]>([]);
   const [products, setProducts] = useState<Record<string, any>>({});
