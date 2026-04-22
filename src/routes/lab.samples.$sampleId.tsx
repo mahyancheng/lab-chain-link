@@ -44,6 +44,9 @@ function SampleDetail() {
   const [reportKind, setReportKind] = useState<"report" | "external_cert">("report");
   const [uploadingReport, setUploadingReport] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<{ approver_id: string; created_at: string; note: string | null }[]>([]);
+  const [requiredApprovals, setRequiredApprovals] = useState<number>(2);
+  const [approveNote, setApproveNote] = useState("");
 
   // Intake form state
   const [weight, setWeight] = useState("");
@@ -82,7 +85,20 @@ function SampleDetail() {
       setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
       setCondition(s.intake_condition ?? "");
       setIntakeNotes(s.intake_notes ?? "");
+
+      const { data: appr } = await supabase
+        .from("sample_approvals")
+        .select("approver_id, created_at, note")
+        .eq("sample_id", s.id)
+        .order("created_at");
+      setApprovals(appr ?? []);
     }
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("qa_required_approvals")
+      .eq("id", true)
+      .maybeSingle();
+    if (settings?.qa_required_approvals) setRequiredApprovals(settings.qa_required_approvals);
   }
 
   useEffect(() => { load(); }, [sampleId]);
