@@ -206,6 +206,43 @@ function SampleDetail() {
     toast.success("Saved");
   }
 
+  async function uploadReport() {
+    if (!reportFile || !sample || !user) return;
+    setUploadingReport(true);
+    try {
+      const path = `${sample.order_id}/${sample.id}/${reportKind}-${Date.now()}-${reportFile.name}`;
+      const { error } = await supabase.storage.from("reports").upload(path, reportFile);
+      if (error) { toast.error("Upload failed: " + error.message); return; }
+      const { error: insErr } = await supabase.from("attachments").insert({
+        kind: reportKind, bucket: "reports", path, filename: reportFile.name,
+        uploaded_by: user.id, order_id: sample.order_id, sample_id: sample.id,
+      });
+      if (insErr) { toast.error("Save failed: " + insErr.message); return; }
+      await supabase.from("chain_of_custody_events").insert({
+        order_id: sample.order_id, sample_id: sample.id, actor_id: user.id,
+        event_type: "report_uploaded",
+        description: `${reportKind === "report" ? "Lab report" : "External certificate"} uploaded: ${reportFile.name}`,
+      });
+      toast.success("Uploaded");
+      setReportFile(null);
+      load();
+    } finally { setUploadingReport(false); }
+  }
+
+  async function downloadReport(att: any) {
+    const { data, error } = await supabase.storage.from(att.bucket).createSignedUrl(att.path, 60);
+    if (error || !data) return toast.error("Could not generate link");
+    window.open(data.signedUrl, "_blank");
+  }
+
+  async function deleteReport(att: any) {
+    if (!confirm("Delete this file?")) return;
+    await supabase.storage.from(att.bucket).remove([att.path]);
+    await supabase.from("attachments").delete().eq("id", att.id);
+    toast.success("Deleted");
+    load();
+  }
+
   if (!sample) return <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">Loading…</PortalShell>;
 
   const next = nextSampleStage(sample.stage);
