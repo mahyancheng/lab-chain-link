@@ -16,12 +16,12 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const nav = useNavigate();
-  const { user, roles, loading } = useAuth();
+  const { user, roles, rolesLoaded, loading } = useAuth();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) nav({ to: homeRouteFor(roles) as "/portal" });
-  }, [user, roles, loading, nav]);
+    if (!loading && user && rolesLoaded) nav({ to: homeRouteFor(roles) as "/portal" });
+  }, [user, roles, rolesLoaded, loading, nav]);
 
   async function signIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
