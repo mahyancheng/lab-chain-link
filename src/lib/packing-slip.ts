@@ -1,5 +1,10 @@
-import jsPDF from "jspdf";
 import { qrDataUrl } from "./qr";
+
+// jspdf is heavy; only load when a PDF is actually requested.
+async function loadJsPdf() {
+  const mod = await import("jspdf");
+  return mod.jsPDF ?? mod.default;
+}
 
 export interface PackingSlipInput {
   orderNumber: string;
