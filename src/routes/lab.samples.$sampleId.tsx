@@ -177,21 +177,18 @@ function SampleDetail() {
     const next = nextSampleStage(sample.stage);
     if (!next) return;
 
+    // QA review now requires N distinct lab approvals — block manual advance.
+    if (sample.stage === "qa_review") {
+      return toast.error(`Use the approvals panel below — ${requiredApprovals} approval(s) required.`);
+    }
+
     // Step 5 spec: release is admin-controlled
     if (next === "released" && !isAdmin) {
       return toast.error("Only an Admin can release reports.");
     }
-    // QA verification: prevent same person from QA-verifying their own work
-    if (sample.stage === "qa_review" && sample.intake_by === user.id && !isAdmin) {
-      return toast.error("Separation of duties: another lab member must verify.");
-    }
 
     setBusy(true);
     const updates: any = { stage: next };
-    if (next === "ready_for_release") {
-      updates.qa_verified_by = user.id;
-      updates.qa_verified_at = new Date().toISOString();
-    }
     await supabase.from("order_samples").update(updates).eq("id", sample.id);
     await supabase.from("chain_of_custody_events").insert({
       order_id: sample.order_id,
@@ -212,6 +209,38 @@ function SampleDetail() {
     }
     setBusy(false);
     toast.success(`Stage → ${STAGE_LABEL[next]}`);
+    load();
+  }
+
+  async function submitApproval() {
+    if (!sample || !user) return;
+    if (sample.stage !== "qa_review") return toast.error("Sample is not in QA review");
+    if (sample.intake_by === user.id && !isAdmin) {
+      return toast.error("Separation of duties: another lab member must approve.");
+    }
+    if (approvals.some((a) => a.approver_id === user.id)) {
+      return toast.error("You have already approved this sample.");
+    }
+    setBusy(true);
+    const { error } = await supabase.from("sample_approvals").insert({
+      sample_id: sample.id,
+      approver_id: user.id,
+      note: approveNote.trim() || null,
+    });
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+    await supabase.from("chain_of_custody_events").insert({
+      order_id: sample.order_id,
+      sample_id: sample.id,
+      actor_id: user.id,
+      event_type: "qa_approval",
+      description: `QA approval recorded${approveNote ? `: ${approveNote}` : ""}`,
+    });
+    setApproveNote("");
+    setBusy(false);
+    toast.success("Approval recorded");
     load();
   }
 
