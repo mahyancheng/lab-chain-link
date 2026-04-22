@@ -21,7 +21,7 @@ function prettyEventType(t: string) {
 }
 
 export const Route = createFileRoute("/lab/samples/$sampleId")({
-  component: () => <RoleGuard allow={["lab", "admin"]}><SampleDetail /></RoleGuard>,
+  component: () => <RoleGuard allow={["lab"]}><SampleDetail /></RoleGuard>,
 });
 
 const NAV = [

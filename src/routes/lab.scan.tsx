@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/lab/scan")({
-  component: () => <RoleGuard allow={["lab", "admin"]}><ScanPage /></RoleGuard>,
+  component: () => <RoleGuard allow={["lab"]}><ScanPage /></RoleGuard>,
 });
 
 const NAV = [

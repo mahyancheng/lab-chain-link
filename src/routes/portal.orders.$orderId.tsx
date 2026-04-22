@@ -18,7 +18,7 @@ import { SampleCard } from "@/components/SampleCard";
 import { OrderHeroCard } from "@/components/OrderHeroCard";
 
 export const Route = createFileRoute("/portal/orders/$orderId")({
-  component: () => <RoleGuard allow={["customer", "admin", "lab"]}><OrderDetail /></RoleGuard>,
+  component: () => <RoleGuard allow={["customer"]}><OrderDetail /></RoleGuard>,
 });
 
 const CUSTOMER_NAV = [
