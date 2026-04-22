@@ -11,9 +11,10 @@ import { generatePackingSlipPdf } from "@/lib/packing-slip";
 import { qrDataUrl } from "@/lib/qr";
 import { Download, ArrowLeft, CheckCircle2, Package } from "lucide-react";
 import { toast } from "sonner";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/portal/orders/$orderId")({
-  component: OrderDetail,
+  component: () => <RoleGuard allow={["customer", "admin"]}><OrderDetail /></RoleGuard>,
 });
 
 const NAV = [

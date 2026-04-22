@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { STAGE_LABEL } from "@/lib/stages";
 import { toast } from "sonner";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/lab/samples/$sampleId")({
-  component: SampleDetail,
+  component: () => <RoleGuard allow={["lab", "admin"]}><SampleDetail /></RoleGuard>,
 });
 
 const NAV = [
