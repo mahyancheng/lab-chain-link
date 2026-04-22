@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StageTimeline } from "@/components/StageTimeline";
 import { STAGE_LABEL } from "@/lib/stages";
-import { generatePackingSlipPdf } from "@/lib/packing-slip";
+import { generatePackingSlipPdf, generateCompliancePackPdf } from "@/lib/packing-slip";
 import { qrDataUrl } from "@/lib/qr";
-import { Download, ArrowLeft, CheckCircle2, Package } from "lucide-react";
+import { Download, ArrowLeft, CheckCircle2, Package, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +26,6 @@ const ADMIN_NAV = [
   { to: "/admin", label: "Operations" },
   { to: "/admin/finance", label: "Finance" },
   { to: "/admin/config", label: "Configuration" },
-  { to: "/lab", label: "Lab workspace" },
 ];
 const LAB_NAV = [
   { to: "/lab", label: "Queue" },
@@ -38,6 +37,7 @@ function OrderDetail() {
   const { roles } = useAuth();
   const isAdmin = roles.includes("admin");
   const isLab = roles.includes("lab");
+  const isStaff = isAdmin || isLab;
   const NAV = isAdmin ? ADMIN_NAV : isLab ? LAB_NAV : CUSTOMER_NAV;
   const SHELL_TITLE = isAdmin ? "Admin Portal" : isLab ? "Lab Workspace" : "Customer Portal";
   const BACK_TO = isAdmin ? "/admin" : isLab ? "/lab" : "/portal";
@@ -49,6 +49,8 @@ function OrderDetail() {
   const [payment, setPayment] = useState<any>(null);
   const [orderQr, setOrderQr] = useState<string>("");
   const [sampleQrs, setSampleQrs] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<Record<string, any[]>>({});
+  const [parameters, setParameters] = useState<Record<string, any>>({});
 
   useEffect(() => {
     (async () => {
@@ -62,23 +64,31 @@ function OrderDetail() {
         setProducts(Object.fromEntries((ps ?? []).map((p) => [p.id, p])));
       }
       const { data: ev } = await supabase
-        .from("chain_of_custody_events")
-        .select("*")
-        .eq("order_id", orderId)
-        .order("created_at");
+        .from("chain_of_custody_events").select("*").eq("order_id", orderId).order("created_at");
       setEvents(ev ?? []);
       const { data: sh } = await supabase.from("shipments").select("*").eq("order_id", orderId).maybeSingle();
       setShipment(sh);
       const { data: pay } = await supabase.from("payments").select("*").eq("order_id", orderId).maybeSingle();
       setPayment(pay);
 
-      // Generate QR codes — sample QR encodes sample.id (UUID) for lab scan lookup
       if (o) setOrderQr(await qrDataUrl(o.id, 220));
       const qrMap: Record<string, string> = {};
-      for (const s of ss ?? []) {
-        qrMap[s.id] = await qrDataUrl(s.id, 180);
-      }
+      for (const s of ss ?? []) qrMap[s.id] = await qrDataUrl(s.id, 180);
       setSampleQrs(qrMap);
+
+      // Load results + parameters for compliance pack
+      const sampleIds = (ss ?? []).map((s) => s.id);
+      if (sampleIds.length) {
+        const { data: rs } = await supabase.from("test_results").select("*").in("sample_id", sampleIds);
+        const byS: Record<string, any[]> = {};
+        (rs ?? []).forEach((r) => { (byS[r.sample_id] = byS[r.sample_id] ?? []).push(r); });
+        setResults(byS);
+        const paramIds = Array.from(new Set((rs ?? []).map((r) => r.parameter_id)));
+        if (paramIds.length) {
+          const { data: ps } = await supabase.from("test_parameters").select("*").in("id", paramIds);
+          setParameters(Object.fromEntries((ps ?? []).map((p) => [p.id, p])));
+        }
+      }
     })();
   }, [orderId]);
 
@@ -108,9 +118,51 @@ function OrderDetail() {
     }
   }
 
+  async function downloadCompliancePack() {
+    if (!order) return;
+    try {
+      const verificationUrl = `${window.location.origin}/portal/orders/${order.id}`;
+      const blob = await generateCompliancePackPdf({
+        orderNumber: order.order_number,
+        orderId: order.id,
+        customerName: "Customer",
+        releasedAt: order.released_at ?? new Date().toISOString(),
+        verificationUrl,
+        samples: samples.map((s) => ({
+          label: s.sample_label,
+          product: products[s.product_id]?.name ?? "",
+          batch: s.batch_no,
+          origin: s.origin,
+          qrCode: s.qr_code,
+          results: (results[s.id] ?? []).map((r) => {
+            const p = parameters[r.parameter_id] ?? {};
+            return {
+              name: p.name ?? "—",
+              unit: p.unit,
+              value: r.value != null ? String(r.value) : (r.text_value ?? "—"),
+              passed: r.passed,
+              range: p.min_value != null || p.max_value != null
+                ? `${p.min_value ?? "—"} – ${p.max_value ?? "—"}`
+                : "—",
+            };
+          }),
+        })),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${order.order_number}-compliance-pack.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
   if (!order) return <PortalShell title={SHELL_TITLE} nav={NAV}>Loading…</PortalShell>;
 
   const isJustPaid = order.stage === "paid" || order.stage === "ordered";
+  const isReleased = order.stage === "released";
 
   return (
     <PortalShell title={SHELL_TITLE} nav={NAV}>
@@ -128,6 +180,25 @@ function OrderDetail() {
                 Print or save the QR codes below, attach them to each sample, and follow the packaging instructions before pickup.
               </p>
             </div>
+          </div>
+        </Card>
+      )}
+
+      {isReleased && (
+        <Card className="mb-6 border-primary/40 bg-primary/5 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <FileCheck2 className="h-6 w-6 text-primary" />
+              <div>
+                <h2 className="font-semibold">Report released</h2>
+                <p className="text-sm text-muted-foreground">
+                  Your compliance pack (Report + CoA) is ready. Verification QR is embedded in the PDF.
+                </p>
+              </div>
+            </div>
+            <Button onClick={downloadCompliancePack}>
+              <Download className="mr-2 h-4 w-4" />Compliance pack
+            </Button>
           </div>
         </Card>
       )}
@@ -151,7 +222,7 @@ function OrderDetail() {
 
           <Card className="p-5">
             <h2 className="mb-1 flex items-center gap-2 font-semibold">
-              <Package className="h-4 w-4" /> Samples & packaging instructions ({samples.length})
+              <Package className="h-4 w-4" /> Samples ({samples.length})
             </h2>
             <p className="mb-4 text-xs text-muted-foreground">
               Print each QR code and attach it to the matching sample container. Labs will scan to look up details.
@@ -163,11 +234,8 @@ function OrderDetail() {
                   <div key={s.id} className="rounded-lg border p-4">
                     <div className="flex gap-4">
                       {sampleQrs[s.id] ? (
-                        <img
-                          src={sampleQrs[s.id]}
-                          alt={`QR for ${s.sample_label}`}
-                          className="h-32 w-32 rounded-md border bg-white p-1"
-                        />
+                        <img src={sampleQrs[s.id]} alt={`QR for ${s.sample_label}`}
+                          className="h-32 w-32 rounded-md border bg-white p-1" />
                       ) : (
                         <div className="h-32 w-32 animate-pulse rounded-md bg-muted" />
                       )}
@@ -183,15 +251,28 @@ function OrderDetail() {
                           </div>
                           <Badge variant="outline">{STAGE_LABEL[s.stage] ?? s.stage}</Badge>
                         </div>
+                        {(s.batch_no || s.origin || s.composition) && (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {s.batch_no && <>Batch: <b>{s.batch_no}</b> · </>}
+                            {s.origin && <>Origin: <b>{s.origin}</b> · </>}
+                            {s.composition && <>Composition: <b>{s.composition}</b></>}
+                          </div>
+                        )}
                         <div className="mt-2 rounded-md bg-muted/50 p-2 text-xs">
                           <div className="mb-1 font-medium uppercase tracking-wide text-muted-foreground">
                             Packaging instructions
                           </div>
-                          <p>{product?.packaging_instructions ?? "Pack in clean, sealed container. Label with sample ID."}</p>
+                          <p>{product?.packaging_instructions ?? "Pack in clean, sealed container with tamper-evident seal. Label with sample QR."}</p>
                           {product?.tat_days && (
                             <p className="mt-1 text-muted-foreground">Expected TAT: {product.tat_days} days</p>
                           )}
                         </div>
+                        {isStaff && s.intake_at && (
+                          <div className="mt-2 rounded-md border bg-card p-2 text-xs">
+                            <b>Intake:</b> {s.intake_disposition} · {s.intake_weight_g}g · {s.intake_condition}
+                            {s.intake_notes && <> — {s.intake_notes}</>}
+                          </div>
+                        )}
                         <div className="mt-1 font-mono text-[10px] text-muted-foreground break-all">
                           Sample ID: {s.id}
                         </div>
@@ -228,6 +309,11 @@ function OrderDetail() {
             <Button variant="outline" className="mt-3 w-full" onClick={downloadPackingSlip}>
               <Download className="mr-2 h-4 w-4" />Packing slip (PDF)
             </Button>
+            {isReleased && (
+              <Button className="mt-2 w-full" onClick={downloadCompliancePack}>
+                <FileCheck2 className="mr-2 h-4 w-4" />Compliance pack
+              </Button>
+            )}
           </Card>
 
           <Card className="p-5 text-sm">
