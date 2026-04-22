@@ -103,13 +103,13 @@ function CustomerDetail() {
         Back to customers
       </Link>
 
-      <Card className="mb-6 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+      <Card className="mb-6 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
               <SplitText>{profile?.full_name ?? "Customer"}</SplitText>
             </h1>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground sm:text-sm">
               {profile?.company && (
                 <span className="inline-flex items-center gap-1">
                   <Building2 className="h-3.5 w-3.5" />
@@ -131,31 +131,31 @@ function CustomerDetail() {
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-lg border bg-card px-4 py-2">
+          <div className="grid grid-cols-3 gap-2 text-center sm:gap-3">
+            <div className="rounded-lg border bg-card px-2 py-2 sm:px-4">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Orders
               </div>
-              <div className="text-xl font-semibold">{orders.length}</div>
+              <div className="text-lg font-semibold sm:text-xl">{orders.length}</div>
             </div>
-            <div className="rounded-lg border bg-card px-4 py-2">
+            <div className="rounded-lg border bg-card px-2 py-2 sm:px-4">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Released
               </div>
-              <div className="text-xl font-semibold">{released}</div>
+              <div className="text-lg font-semibold sm:text-xl">{released}</div>
             </div>
-            <div className="rounded-lg border bg-card px-4 py-2">
+            <div className="rounded-lg border bg-card px-2 py-2 sm:px-4">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Spend
               </div>
-              <div className="text-xl font-semibold">RM{totalSpend.toFixed(2)}</div>
+              <div className="text-lg font-semibold sm:text-xl">RM{totalSpend.toFixed(2)}</div>
             </div>
           </div>
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_minmax(380px,440px)]">
-        <div>
+      <div className="grid gap-6 lg:grid-cols-[1fr_minmax(360px,420px)]">
+        <div className="min-w-0">
           <Tabs defaultValue="orders">
             <TabsList>
               <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
@@ -244,7 +244,9 @@ function CustomerDetail() {
           </Tabs>
         </div>
 
-        <SupportChat customerId={customerId} customerName={profile?.full_name ?? undefined} />
+        <div className="h-[600px] lg:sticky lg:top-20">
+          <SupportChat customerId={customerId} customerName={profile?.full_name ?? undefined} />
+        </div>
       </div>
     </PortalShell>
   );
