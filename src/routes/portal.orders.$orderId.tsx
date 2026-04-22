@@ -317,16 +317,18 @@ function OrderDetail() {
             )}
           </Card>
 
-          <Card className="p-5 text-sm">
-            <h3 className="mb-2 font-semibold">Payment</h3>
-            {payment ? (
-              <>
-                <div className="flex justify-between"><span>Amount</span><span>RM{Number(payment.amount).toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Status</span><Badge variant="secondary">{payment.status}</Badge></div>
-                <div className="mt-1 truncate text-xs text-muted-foreground">{payment.provider_ref}</div>
-              </>
-            ) : <p className="text-muted-foreground">No payment yet.</p>}
-          </Card>
+          {!isLab && (
+            <Card className="p-5 text-sm">
+              <h3 className="mb-2 font-semibold">Payment</h3>
+              {payment ? (
+                <>
+                  <div className="flex justify-between"><span>Amount</span><span>RM{Number(payment.amount).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Status</span><Badge variant="secondary">{payment.status}</Badge></div>
+                  <div className="mt-1 truncate text-xs text-muted-foreground">{payment.provider_ref}</div>
+                </>
+              ) : <p className="text-muted-foreground">No payment yet.</p>}
+            </Card>
+          )}
 
           <Card className="p-5 text-sm">
             <h3 className="mb-2 font-semibold">Shipment</h3>
