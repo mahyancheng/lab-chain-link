@@ -207,9 +207,20 @@ export type Database = {
       }
       order_samples: {
         Row: {
+          batch_no: string | null
+          composition: string | null
           created_at: string
           id: string
+          intake_at: string | null
+          intake_by: string | null
+          intake_condition: string | null
+          intake_disposition:
+            | Database["public"]["Enums"]["intake_disposition"]
+            | null
+          intake_notes: string | null
+          intake_weight_g: number | null
           order_id: string
+          origin: string | null
           product_id: string
           qa_verified_at: string | null
           qa_verified_by: string | null
@@ -220,9 +231,20 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          batch_no?: string | null
+          composition?: string | null
           created_at?: string
           id?: string
+          intake_at?: string | null
+          intake_by?: string | null
+          intake_condition?: string | null
+          intake_disposition?:
+            | Database["public"]["Enums"]["intake_disposition"]
+            | null
+          intake_notes?: string | null
+          intake_weight_g?: number | null
           order_id: string
+          origin?: string | null
           product_id: string
           qa_verified_at?: string | null
           qa_verified_by?: string | null
@@ -233,9 +255,20 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          batch_no?: string | null
+          composition?: string | null
           created_at?: string
           id?: string
+          intake_at?: string | null
+          intake_by?: string | null
+          intake_condition?: string | null
+          intake_disposition?:
+            | Database["public"]["Enums"]["intake_disposition"]
+            | null
+          intake_notes?: string | null
+          intake_weight_g?: number | null
           order_id?: string
+          origin?: string | null
           product_id?: string
           qa_verified_at?: string | null
           qa_verified_by?: string | null
@@ -281,6 +314,8 @@ export type Database = {
           order_number: string
           pickup_address: string | null
           qr_code: string
+          released_at: string | null
+          released_by: string | null
           stage: Database["public"]["Enums"]["order_stage"]
           subtotal: number
           total: number
@@ -297,6 +332,8 @@ export type Database = {
           order_number?: string
           pickup_address?: string | null
           qr_code?: string
+          released_at?: string | null
+          released_by?: string | null
           stage?: Database["public"]["Enums"]["order_stage"]
           subtotal?: number
           total?: number
@@ -313,6 +350,8 @@ export type Database = {
           order_number?: string
           pickup_address?: string | null
           qr_code?: string
+          released_at?: string | null
+          released_by?: string | null
           stage?: Database["public"]["Enums"]["order_stage"]
           subtotal?: number
           total?: number
@@ -432,6 +471,33 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_test_panels: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          items: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          items?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          items?: Json
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -647,6 +713,7 @@ export type Database = {
         | "other"
       delivery_type: "same_day" | "standard"
       exception_status: "open" | "approved" | "rejected"
+      intake_disposition: "accepted" | "on_hold" | "rejected"
       order_stage:
         | "draft"
         | "ordered"
@@ -657,13 +724,16 @@ export type Database = {
         | "sample_verified"
         | "in_testing"
         | "qa_review"
+        | "ready_for_release"
         | "released"
         | "cancelled"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       sample_stage:
         | "pending"
         | "received"
+        | "sample_prep"
         | "in_testing"
+        | "data_validation"
         | "qa_review"
         | "ready_for_release"
         | "released"
@@ -806,6 +876,7 @@ export const Constants = {
       ],
       delivery_type: ["same_day", "standard"],
       exception_status: ["open", "approved", "rejected"],
+      intake_disposition: ["accepted", "on_hold", "rejected"],
       order_stage: [
         "draft",
         "ordered",
@@ -816,6 +887,7 @@ export const Constants = {
         "sample_verified",
         "in_testing",
         "qa_review",
+        "ready_for_release",
         "released",
         "cancelled",
       ],
@@ -823,7 +895,9 @@ export const Constants = {
       sample_stage: [
         "pending",
         "received",
+        "sample_prep",
         "in_testing",
+        "data_validation",
         "qa_review",
         "ready_for_release",
         "released",
