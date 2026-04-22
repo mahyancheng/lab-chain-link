@@ -143,7 +143,8 @@ function NewOrder() {
       toast.success("Order placed!");
       nav({ to: "/portal/orders/$orderId", params: { orderId: order.id } });
     } catch (e: any) {
-      toast.error(e.message ?? "Failed");
+      console.error("placeOrder failed:", e);
+      toast.error(e?.message ?? e?.error_description ?? "Failed to place order");
     } finally {
       setBusy(false);
     }
