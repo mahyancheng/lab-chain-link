@@ -166,4 +166,94 @@
   h1, h2, h3, h4 {
     letter-spacing: -0.025em;
   }
+
+  /* Global motion theme: smooth, springy, Apple-esque */
+  a, button, [role="button"], input, textarea, select {
+    transition:
+      background-color 200ms ease-out,
+      color 200ms ease-out,
+      border-color 200ms ease-out,
+      box-shadow 200ms ease-out,
+      transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ring) 25%, transparent);
+  }
+}
+
+@layer components {
+  .card-hover {
+    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 220ms ease-out,
+                border-color 220ms ease-out;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in oklab, var(--color-primary) 30%, var(--color-border));
+  }
+
+  .story-link {
+    position: relative;
+    display: inline-block;
+  }
+  .story-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    height: 2px;
+    width: 100%;
+    background: var(--color-primary);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 300ms ease-out;
+  }
+  .story-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .pill-nav {
+    position: relative;
+    border-radius: 9999px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-muted-foreground);
+    transition: color 200ms ease-out, background-color 200ms ease-out, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .pill-nav:hover {
+    color: var(--color-foreground);
+    background-color: color-mix(in oklab, var(--color-accent) 14%, transparent);
+    transform: translateY(-1px);
+  }
+  .pill-nav-active {
+    color: var(--color-secondary-foreground);
+    background-color: var(--color-secondary);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in { animation: fade-in 0.35s ease-out both; }
+  .animate-scale-in { animation: scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hover-scale { transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .hover-scale:hover { transform: scale(1.03); }
+  .hover-scale:active { transform: scale(0.98); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
