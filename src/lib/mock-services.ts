@@ -18,7 +18,7 @@ export async function getLalamoveQuote(params: {
   return {
     quoteId: "LM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
     amount: base + variance,
-    currency: "INR",
+    currency: "MYR",
     etaMinutes: params.deliveryType === "same_day" ? 90 : 24 * 60,
   };
 }
