@@ -10,7 +10,7 @@ import { SupportChat } from "@/components/SupportChat";
 import { OrderListRow } from "@/components/OrderListRow";
 import { STAGE_LABEL } from "@/lib/stages";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, AlertTriangle, Building2, Phone, User } from "lucide-react";
+import { ArrowLeft, Building2, Phone, User } from "lucide-react";
 import { SplitText } from "@/components/ui/split-text";
 
 const ADMIN_NAV = [
@@ -42,7 +42,6 @@ function CustomerDetail() {
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [samples, setSamples] = useState<any[]>([]);
-  const [exceptions, setExceptions] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -62,23 +61,14 @@ function CustomerDetail() {
 
       const orderIds = (ords ?? []).map((o) => o.id);
       if (orderIds.length > 0) {
-        const [smp, ex] = await Promise.all([
-          supabase
-            .from("order_samples")
-            .select("id, sample_label, stage, order_id, created_at")
-            .in("order_id", orderIds)
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("exceptions")
-            .select("*")
-            .in("order_id", orderIds)
-            .order("created_at", { ascending: false }),
-        ]);
-        setSamples(smp.data ?? []);
-        setExceptions(ex.data ?? []);
+        const { data: smp } = await supabase
+          .from("order_samples")
+          .select("id, sample_label, stage, order_id, created_at")
+          .in("order_id", orderIds)
+          .order("created_at", { ascending: false });
+        setSamples(smp ?? []);
       } else {
         setSamples([]);
-        setExceptions([]);
       }
     })();
   }, [customerId]);
@@ -87,7 +77,6 @@ function CustomerDetail() {
     .filter((o) => o.stage !== "cancelled")
     .reduce((s, o) => s + Number(o.total ?? 0), 0);
   const released = orders.filter((o) => o.stage === "released").length;
-  const openEx = exceptions.filter((e) => e.status === "open").length;
 
   return (
     <PortalShell
@@ -160,14 +149,6 @@ function CustomerDetail() {
             <TabsList>
               <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
               <TabsTrigger value="samples">Samples ({samples.length})</TabsTrigger>
-              <TabsTrigger value="issues">
-                Issues
-                {openEx > 0 && (
-                  <Badge variant="destructive" className="ml-1.5 h-4 px-1 text-[10px]">
-                    {openEx}
-                  </Badge>
-                )}
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="orders" className="mt-4">
@@ -214,33 +195,6 @@ function CustomerDetail() {
               )}
             </TabsContent>
 
-            <TabsContent value="issues" className="mt-4">
-              {exceptions.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No issues raised.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {exceptions.map((e) => (
-                    <Card key={e.id} className="flex items-start gap-3 p-3 text-sm">
-                      <AlertTriangle
-                        className={
-                          e.status === "open"
-                            ? "mt-0.5 h-4 w-4 shrink-0 text-destructive"
-                            : "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                        }
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{e.reason}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(e.created_at).toLocaleString()} · {e.status}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
           </Tabs>
         </div>
 
