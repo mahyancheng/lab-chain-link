@@ -177,13 +177,13 @@ function OrderDetail() {
     }
   }
 
-  if (!order) return <PortalShell title={SHELL_TITLE} nav={NAV}>Loading…</PortalShell>;
+  if (!order) return <PortalShell title={SHELL_TITLE} nav={NAV} requireRole="customer">Loading…</PortalShell>;
 
   const isJustPaid = order.stage === "paid" || order.stage === "ordered";
   const isReleased = order.stage === "released";
 
   return (
-    <PortalShell title={SHELL_TITLE} nav={NAV}>
+    <PortalShell title={SHELL_TITLE} nav={NAV} requireRole="customer">
       <Link to={BACK_TO as "/portal"} className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="mr-1 h-4 w-4" />Back
       </Link>
