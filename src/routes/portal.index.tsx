@@ -1,6 +1,6 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { OrderListRow } from "@/components/OrderListRow";
 import { Plus } from "lucide-react";
 import { RoleGuard } from "@/components/RoleGuard";
+import { OrdersFilterBar, EMPTY_FILTERS, filterOrders, type OrdersFilterValue } from "@/components/OrdersFilterBar";
+import { ORDER_STAGES } from "@/lib/stages";
 
 export const Route = createFileRoute("/portal/")({
   component: () => <RoleGuard allow={["customer"]}><PortalHome /></RoleGuard>,
