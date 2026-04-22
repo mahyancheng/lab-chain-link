@@ -33,6 +33,10 @@ function SampleDetail() {
   const [results, setResults] = useState<Record<string, { value: string; passed: boolean | null }>>({});
   const [evidence, setEvidence] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  const [reports, setReports] = useState<any[]>([]);
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportKind, setReportKind] = useState<"report" | "external_cert">("report");
+  const [uploadingReport, setUploadingReport] = useState(false);
 
   // Intake form state
   const [weight, setWeight] = useState("");
@@ -60,6 +64,9 @@ function SampleDetail() {
       const { data: ev } = await supabase
         .from("attachments").select("*").eq("sample_id", s.id).eq("kind", "evidence");
       setEvidence(ev ?? []);
+      const { data: rep } = await supabase
+        .from("attachments").select("*").eq("sample_id", s.id).in("kind", ["report", "external_cert"]).order("created_at", { ascending: false });
+      setReports(rep ?? []);
       setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
       setCondition(s.intake_condition ?? "");
       setIntakeNotes(s.intake_notes ?? "");
@@ -199,6 +206,43 @@ function SampleDetail() {
     toast.success("Saved");
   }
 
+  async function uploadReport() {
+    if (!reportFile || !sample || !user) return;
+    setUploadingReport(true);
+    try {
+      const path = `${sample.order_id}/${sample.id}/${reportKind}-${Date.now()}-${reportFile.name}`;
+      const { error } = await supabase.storage.from("reports").upload(path, reportFile);
+      if (error) { toast.error("Upload failed: " + error.message); return; }
+      const { error: insErr } = await supabase.from("attachments").insert({
+        kind: reportKind, bucket: "reports", path, filename: reportFile.name,
+        uploaded_by: user.id, order_id: sample.order_id, sample_id: sample.id,
+      });
+      if (insErr) { toast.error("Save failed: " + insErr.message); return; }
+      await supabase.from("chain_of_custody_events").insert({
+        order_id: sample.order_id, sample_id: sample.id, actor_id: user.id,
+        event_type: "report_uploaded",
+        description: `${reportKind === "report" ? "Lab report" : "External certificate"} uploaded: ${reportFile.name}`,
+      });
+      toast.success("Uploaded");
+      setReportFile(null);
+      load();
+    } finally { setUploadingReport(false); }
+  }
+
+  async function downloadReport(att: any) {
+    const { data, error } = await supabase.storage.from(att.bucket).createSignedUrl(att.path, 60);
+    if (error || !data) return toast.error("Could not generate link");
+    window.open(data.signedUrl, "_blank");
+  }
+
+  async function deleteReport(att: any) {
+    if (!confirm("Delete this file?")) return;
+    await supabase.storage.from(att.bucket).remove([att.path]);
+    await supabase.from("attachments").delete().eq("id", att.id);
+    toast.success("Deleted");
+    load();
+  }
+
   if (!sample) return <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">Loading…</PortalShell>;
 
   const next = nextSampleStage(sample.stage);
@@ -328,6 +372,60 @@ function SampleDetail() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </Card>
+
+      <Card className="mt-6 p-5">
+        <h2 className="mb-1 font-semibold">Test result files</h2>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Upload the official lab report (PDF) or an external certificate (CoA, MSDS, third-party report). Files are stored securely and visible to the customer once the report is released.
+        </p>
+        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_200px_auto] md:items-end">
+          <div>
+            <Label>File</Label>
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
+              onChange={(e) => setReportFile(e.target.files?.[0] ?? null)}
+              disabled={uploadingReport}
+            />
+          </div>
+          <div>
+            <Label>Type</Label>
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={reportKind}
+              onChange={(e) => setReportKind(e.target.value as "report" | "external_cert")}
+              disabled={uploadingReport}
+            >
+              <option value="report">Lab report</option>
+              <option value="external_cert">External certificate</option>
+            </select>
+          </div>
+          <Button onClick={uploadReport} disabled={!reportFile || uploadingReport}>
+            {uploadingReport ? "Uploading…" : "Upload"}
+          </Button>
+        </div>
+
+        {reports.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No files uploaded yet.</p>
+        ) : (
+          <div className="divide-y rounded-md border">
+            {reports.map((att) => (
+              <div key={att.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{att.filename ?? att.path.split("/").pop()}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {att.kind === "report" ? "Lab report" : "External certificate"} · {new Date(att.created_at).toLocaleString()}
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" variant="outline" onClick={() => downloadReport(att)}>Open</Button>
+                  <Button size="sm" variant="ghost" onClick={() => deleteReport(att)}>Delete</Button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Card>
