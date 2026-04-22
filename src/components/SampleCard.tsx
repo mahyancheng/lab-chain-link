@@ -50,12 +50,13 @@ function SampleCardImpl(props: SampleCardProps) {
     <div
       onClick={() => setExpanded((v) => !v)}
       className="card-hover group relative cursor-pointer overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-secondary/30 shadow-[0_4px_24px_-12px_oklch(0.18_0.02_220/0.18)]"
+    >
       {/* Sheen */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_var(--x,50%)_var(--y,30%),oklch(0.78_0.12_230/0.18),transparent_60%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="relative flex gap-4 p-5">
         {/* QR */}
-        <motion.div layout className="flex shrink-0 flex-col items-center gap-2">
+        <div className="flex shrink-0 flex-col items-center gap-2">
           <div className="relative rounded-xl border border-border/60 bg-white p-2 shadow-sm">
             {qrDataUrl ? (
               <img
@@ -93,7 +94,7 @@ function SampleCardImpl(props: SampleCardProps) {
               Download PDF
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Body */}
         <div className="flex min-w-0 flex-1 flex-col">
@@ -170,9 +171,11 @@ function SampleCardImpl(props: SampleCardProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
+
+export const SampleCard = memo(SampleCardImpl);
 
 function Chip({ label, value }: { label: string; value: string }) {
   return (
