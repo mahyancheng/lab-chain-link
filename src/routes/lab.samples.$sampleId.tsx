@@ -417,6 +417,57 @@ function SampleDetail() {
         )}
       </Card>
 
+      {sample.stage === "qa_review" && (
+        <Card className="mb-6 border-primary/30 bg-primary/5 p-5">
+          <h2 className="mb-2 flex items-center gap-2 font-semibold">
+            <ShieldCheck className="h-4 w-4" /> QA approvals
+          </h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {requiredApprovals === 1
+              ? "1 lab approval required to advance this sample to Ready for release."
+              : `${requiredApprovals} distinct lab approvals required to advance this sample to Ready for release.`}
+          </p>
+          <div className="mb-3 text-sm">
+            <b>{approvals.length}</b> of <b>{requiredApprovals}</b> approval(s) recorded.
+          </div>
+          {approvals.length > 0 && (
+            <ul className="mb-3 space-y-1 text-xs text-muted-foreground">
+              {approvals.map((a) => (
+                <li key={a.approver_id}>
+                  ✓ {a.approver_id === user?.id ? "You" : a.approver_id.slice(0, 8) + "…"} ·{" "}
+                  {new Date(a.created_at).toLocaleString()}
+                  {a.note ? ` — ${a.note}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+          {(() => {
+            const alreadyApproved = !!user && approvals.some((a) => a.approver_id === user.id);
+            const blockedSelf = !!user && sample.intake_by === user.id && !isAdmin;
+            return (
+              <div className="space-y-2">
+                <Textarea
+                  rows={2}
+                  placeholder="Approval note (optional)"
+                  value={approveNote}
+                  onChange={(e) => setApproveNote(e.target.value)}
+                  disabled={alreadyApproved || blockedSelf || busy}
+                />
+                <Button onClick={submitApproval} disabled={alreadyApproved || blockedSelf || busy}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  {alreadyApproved ? "You have approved" : "Approve sample"}
+                </Button>
+                {blockedSelf && (
+                  <p className="text-xs text-destructive">
+                    Separation of duties: you performed intake, another lab member must approve.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </Card>
+      )}
+
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">Test results</h2>
         {parameters.length === 0 ? (
