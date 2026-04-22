@@ -217,7 +217,7 @@ function NewOrder() {
   }
 
   return (
-    <PortalShell title="Customer Portal" nav={NAV}>
+    <PortalShell title="Customer Portal" nav={NAV} requireRole="customer">
       <h1 className="mb-6 text-2xl font-bold"><SplitText>New order</SplitText></h1>
 
       <div className="grid gap-6 lg:grid-cols-3">
