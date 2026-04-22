@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
 import { SampleCard } from "@/components/SampleCard";
+import { OrderHeroCard } from "@/components/OrderHeroCard";
 
 export const Route = createFileRoute("/portal/orders/$orderId")({
   component: () => <RoleGuard allow={["customer", "admin", "lab"]}><OrderDetail /></RoleGuard>,
@@ -208,15 +209,25 @@ function OrderDetail() {
         </Card>
       )}
 
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold"><SplitText>{order.order_number}</SplitText></h1>
-          <p className="text-sm text-muted-foreground">
-            {new Date(order.created_at).toLocaleString()} · {order.delivery_type.replace("_", " ")}
-          </p>
-        </div>
-        <Badge>{STAGE_LABEL[order.stage] ?? order.stage}</Badge>
-      </div>
+      <OrderHeroCard
+        orderNumber={order.order_number}
+        orderId={order.id}
+        stage={order.stage}
+        createdAt={order.created_at}
+        deliveryType={order.delivery_type}
+        pickupAddress={order.pickup_address}
+        deliveryAddress={order.delivery_address}
+        total={Number(order.total ?? 0)}
+        sampleCount={samples.length}
+        qrDataUrl={orderQr}
+        primaryAction={
+          isReleased
+            ? { label: "Download compliance pack", onClick: () => downloadCompliancePack() }
+            : { label: "Download packing slip", onClick: () => downloadPackingSlip() }
+        }
+      />
+
+      <div className="h-6" />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
