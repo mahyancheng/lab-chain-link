@@ -69,7 +69,6 @@ function LabHome() {
     const { data } = await supabase
       .from("order_samples")
       .select("*")
-      .not("stage", "in", "(released,rejected)")
       .order("created_at", { ascending: false });
     setSamples(data ?? []);
     const orderIds = Array.from(new Set((data ?? []).map((s) => s.order_id)));
