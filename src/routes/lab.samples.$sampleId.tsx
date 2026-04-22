@@ -12,8 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { STAGE_LABEL, nextSampleStage, orderStageForSample } from "@/lib/stages";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldCheck, Camera, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Camera, AlertTriangle, CheckCircle2, XCircle, History } from "lucide-react";
 import { RoleGuard } from "@/components/RoleGuard";
+import { Timeline, type TimelineItem } from "@/components/ui/timeline";
+
+function prettyEventType(t: string) {
+  return t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export const Route = createFileRoute("/lab/samples/$sampleId")({
   component: () => <RoleGuard allow={["lab", "admin"]}><SampleDetail /></RoleGuard>,
@@ -38,6 +43,7 @@ function SampleDetail() {
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [reportKind, setReportKind] = useState<"report" | "external_cert">("report");
   const [uploadingReport, setUploadingReport] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
 
   // Intake form state
   const [weight, setWeight] = useState("");
@@ -68,6 +74,11 @@ function SampleDetail() {
       const { data: rep } = await supabase
         .from("attachments").select("*").eq("sample_id", s.id).in("kind", ["report", "external_cert"]).order("created_at", { ascending: false });
       setReports(rep ?? []);
+      const { data: coc } = await supabase
+        .from("chain_of_custody_events").select("*")
+        .or(`sample_id.eq.${s.id},and(order_id.eq.${s.order_id},sample_id.is.null)`)
+        .order("created_at");
+      setEvents(coc ?? []);
       setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
       setCondition(s.intake_condition ?? "");
       setIntakeNotes(s.intake_notes ?? "");
@@ -339,6 +350,27 @@ function SampleDetail() {
           )}
         </Card>
       )}
+
+      <Card className="mb-6 p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold">
+          <History className="h-4 w-4" /> Chain of custody
+        </h2>
+        {events.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No events recorded yet.</p>
+        ) : (
+          <Timeline
+            variant="compact"
+            timestampPosition="inline"
+            items={events.map<TimelineItem>((e, i) => ({
+              id: e.id,
+              title: prettyEventType(e.event_type),
+              description: e.description ?? undefined,
+              timestamp: e.created_at,
+              status: i === events.length - 1 ? "active" : "completed",
+            }))}
+          />
+        )}
+      </Card>
 
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">Test results</h2>
