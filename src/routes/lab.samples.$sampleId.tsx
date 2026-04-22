@@ -327,7 +327,7 @@ function SampleDetail() {
         </div>
         <div className="flex items-center gap-2">
           <Badge>{STAGE_LABEL[sample.stage]}</Badge>
-          {next && !showIntake && (
+          {next && !showIntake && sample.stage !== "qa_review" && (
             <Button onClick={advance} disabled={busy}>
               {sample.stage === "qa_review" && <ShieldCheck className="mr-2 h-4 w-4" />}
               Advance → {STAGE_LABEL[next]}
