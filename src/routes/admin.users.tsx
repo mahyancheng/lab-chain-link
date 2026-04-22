@@ -575,6 +575,59 @@ function AdminUsers() {
           <strong>admin</strong> to grant full administrative access.
         </p>
       </Card>
+
+      <Dialog
+        open={!!pwTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPwTarget(null);
+            setNewPassword("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change password</DialogTitle>
+            <DialogDescription>
+              Set a new password for{" "}
+              <strong>{pwTarget?.full_name ?? "this user"}</strong>. They will be
+              able to sign in with the new password immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="new_password">New password</Label>
+              <Input
+                id="new_password"
+                type="password"
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setPwTarget(null);
+                setNewPassword("");
+              }}
+              disabled={pwSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResetPassword}
+              disabled={pwSaving || newPassword.length < 6}
+            >
+              {pwSaving ? "Updating…" : "Update password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PortalShell>
   );
 }
