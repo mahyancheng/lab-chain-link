@@ -19,6 +19,8 @@ const LAB_SAMPLE_STAGES = [
   "data_validation",
   "qa_review",
   "ready_for_release",
+  "released",
+  "rejected",
 ];
 
 export const Route = createFileRoute("/lab/")({
