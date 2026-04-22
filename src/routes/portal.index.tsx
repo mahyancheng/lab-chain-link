@@ -36,15 +36,42 @@ function PortalHome() {
       });
   }, [user]);
 
+  const inProgress = orders.filter(
+    (o) => !["released", "cancelled"].includes(o.stage),
+  ).length;
+  const released = orders.filter((o) => o.stage === "released").length;
+  const totalSpend = orders
+    .filter((o) => o.stage !== "cancelled")
+    .reduce((sum, o) => sum + Number(o.total ?? 0), 0);
+
   return (
     <PortalShell title="Customer Portal" nav={NAV}>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My orders</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Your orders and lab activity at a glance.</p>
+        </div>
         <Link to="/portal/new">
           <Button><Plus className="mr-2 h-4 w-4" />New order</Button>
         </Link>
       </div>
 
+      <div className="mb-6 grid gap-3 md:grid-cols-3">
+        <Card className="p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">In progress</div>
+          <div className="mt-1 text-3xl font-semibold">{inProgress}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Reports released</div>
+          <div className="mt-1 text-3xl font-semibold">{released}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Lifetime spend</div>
+          <div className="mt-1 text-3xl font-semibold">RM{totalSpend.toFixed(2)}</div>
+        </Card>
+      </div>
+
+      <h2 className="mb-3 text-lg font-semibold">Recent orders</h2>
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : orders.length === 0 ? (
@@ -56,7 +83,7 @@ function PortalHome() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {orders.map((o) => (
+          {orders.slice(0, 10).map((o) => (
             <Link key={o.id} to="/portal/orders/$orderId" params={{ orderId: o.id }}>
               <Card className="flex items-center justify-between p-4 transition hover:border-primary">
                 <div>

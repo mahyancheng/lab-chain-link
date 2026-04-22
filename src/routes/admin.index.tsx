@@ -29,28 +29,28 @@ function AdminHome() {
   const [exceptions, setExceptions] = useState<any[]>([]);
 
   async function load() {
-    const { data: os } = await supabase
-      .from("orders")
-      .select("id, order_number, stage, total, created_at, delivery_type")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    setOrders(os ?? []);
+    const [ordersRes, rqRes, exRes] = await Promise.all([
+      supabase
+        .from("orders")
+        .select("id, order_number, stage, total, created_at, delivery_type")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("order_samples")
+        .select("id, sample_label, order_id, qa_verified_at")
+        .eq("stage", "ready_for_release"),
+      supabase
+        .from("exceptions")
+        .select("*")
+        .eq("status", "open")
+        .order("created_at", { ascending: false }),
+    ]);
+    setOrders(ordersRes.data ?? []);
     const c: Record<string, number> = {};
-    (os ?? []).forEach((o) => (c[o.stage] = (c[o.stage] ?? 0) + 1));
+    (ordersRes.data ?? []).forEach((o) => (c[o.stage] = (c[o.stage] ?? 0) + 1));
     setCounts(c);
-
-    const { data: rq } = await supabase
-      .from("order_samples")
-      .select("id, sample_label, order_id, qa_verified_at")
-      .eq("stage", "ready_for_release");
-    setReleaseQueue(rq ?? []);
-
-    const { data: ex } = await supabase
-      .from("exceptions")
-      .select("*")
-      .eq("status", "open")
-      .order("created_at", { ascending: false });
-    setExceptions(ex ?? []);
+    setReleaseQueue(rqRes.data ?? []);
+    setExceptions(exRes.data ?? []);
   }
 
   useEffect(() => { load(); }, []);

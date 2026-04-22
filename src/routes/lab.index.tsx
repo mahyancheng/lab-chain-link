@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ const NAV = [
 ];
 
 function LabHome() {
+  const nav = useNavigate();
   const [samples, setSamples] = useState<any[]>([]);
   const [orders, setOrders] = useState<Record<string, any>>({});
   const [scan, setScan] = useState("");
@@ -47,12 +48,12 @@ function LabHome() {
     if (!code) return;
     const { data: s } = await supabase.from("order_samples").select("id, order_id").eq("qr_code", code).maybeSingle();
     if (s) {
-      window.location.href = `/lab/samples/${s.id}`;
+      nav({ to: "/lab/samples/$sampleId", params: { sampleId: s.id } });
       return;
     }
     const { data: o } = await supabase.from("orders").select("id").eq("qr_code", code).maybeSingle();
     if (o) {
-      window.location.href = `/lab/orders/${o.id}`;
+      nav({ to: "/portal/orders/$orderId", params: { orderId: o.id } });
       return;
     }
     toast.error("No order or sample matches that code");
