@@ -33,6 +33,10 @@ function SampleDetail() {
   const [results, setResults] = useState<Record<string, { value: string; passed: boolean | null }>>({});
   const [evidence, setEvidence] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  const [reports, setReports] = useState<any[]>([]);
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportKind, setReportKind] = useState<"report" | "external_cert">("report");
+  const [uploadingReport, setUploadingReport] = useState(false);
 
   // Intake form state
   const [weight, setWeight] = useState("");
