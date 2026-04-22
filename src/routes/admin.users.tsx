@@ -74,12 +74,23 @@ interface UserRow {
 function AdminUsers() {
   const { user: me } = useAuth();
   const [rows, setRows] = useState<UserRow[]>([]);
+  const [authStatus, setAuthStatus] = useState<Record<string, { banned: boolean; email: string | null }>>({});
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newRoles, setNewRoles] = useState<Role[]>(["customer"]);
+  const [pwTarget, setPwTarget] = useState<UserRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+
+  async function authedToken() {
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) throw new Error("Not authenticated");
+    return token;
+  }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
