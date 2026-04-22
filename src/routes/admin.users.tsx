@@ -97,9 +97,7 @@ function AdminUsers() {
     const fd = new FormData(e.currentTarget);
     setCreating(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("Not authenticated");
+      const token = await authedToken();
       await adminCreateUser({
         data: {
           email: String(fd.get("email") ?? ""),
@@ -121,7 +119,6 @@ function AdminUsers() {
       setCreating(false);
     }
   }
-
 
   async function load() {
     setLoading(true);
@@ -148,6 +145,63 @@ function AdminUsers() {
     }));
     setRows(merged);
     setLoading(false);
+
+    // Fetch ban status (admin-only server fn)
+    try {
+      const token = await authedToken();
+      const res = await adminListUserStatus({ headers: { Authorization: `Bearer ${token}` } });
+      setAuthStatus(res.users ?? {});
+    } catch (err) {
+      // non-fatal
+      console.warn("Could not load auth status", err);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!pwTarget) return;
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const token = await authedToken();
+      await adminResetPassword({
+        data: { user_id: pwTarget.id, new_password: newPassword },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success(`Password updated for ${pwTarget.full_name ?? "user"}`);
+      setPwTarget(null);
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update password");
+    } finally {
+      setPwSaving(false);
+    }
+  }
+
+  async function toggleBanned(target: UserRow, banned: boolean) {
+    if (target.id === me?.id && banned) {
+      toast.error("You cannot disable your own account");
+      return;
+    }
+    setSavingId(target.id);
+    try {
+      const token = await authedToken();
+      await adminSetUserBanned({
+        data: { user_id: target.id, banned },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAuthStatus((prev) => ({
+        ...prev,
+        [target.id]: { ...(prev[target.id] ?? { email: null }), banned },
+      }));
+      toast.success(banned ? "Account disabled" : "Account re-enabled");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update account");
+    } finally {
+      setSavingId(null);
+    }
   }
 
   useEffect(() => {
