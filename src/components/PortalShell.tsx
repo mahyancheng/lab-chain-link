@@ -138,8 +138,8 @@ export function PortalShell({
           </span>
         </header>
         <main className="mx-auto w-full max-w-7xl px-3 py-4 animate-fade-in sm:px-6 sm:py-8">{children}</main>
-        {requireRole === "customer" && <SupportChatWidget />}
       </SidebarInset>
+      {requireRole === "customer" && <SupportChatWidget />}
     </SidebarProvider>
   );
 }
