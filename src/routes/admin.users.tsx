@@ -29,8 +29,20 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Search, Users, UserPlus } from "lucide-react";
-import { adminCreateUser } from "@/server/admin-users";
+import { Search, Users, UserPlus, KeyRound, Ban, CircleCheck, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  adminCreateUser,
+  adminResetPassword,
+  adminSetUserBanned,
+  adminListUserStatus,
+} from "@/server/admin-users";
 
 export const Route = createFileRoute("/admin/users")({
   component: () => (
