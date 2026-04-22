@@ -1,6 +1,6 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
 import { SampleListRow } from "@/components/SampleListRow";
+import { OrdersFilterBar, EMPTY_FILTERS, type OrdersFilterValue } from "@/components/OrdersFilterBar";
+
+const LAB_SAMPLE_STAGES = [
+  "pending",
+  "received",
+  "sample_prep",
+  "in_testing",
+  "data_validation",
+  "qa_review",
+  "ready_for_release",
+];
 
 export const Route = createFileRoute("/lab/")({
   component: () => <RoleGuard allow={["lab"]}><LabHome /></RoleGuard>,
@@ -25,6 +36,32 @@ function LabHome() {
   const [orders, setOrders] = useState<Record<string, any>>({});
   const [products, setProducts] = useState<Record<string, any>>({});
   const [scan, setScan] = useState("");
+  const [filters, setFilters] = useState<OrdersFilterValue>(EMPTY_FILTERS);
+
+  const filteredSamples = useMemo(() => {
+    const q = filters.q.trim().toLowerCase();
+    const fromTs = filters.from ? new Date(filters.from + "T00:00:00").getTime() : null;
+    const toTs = filters.to ? new Date(filters.to + "T23:59:59.999").getTime() : null;
+    return samples.filter((s) => {
+      if (filters.stage !== "all" && s.stage !== filters.stage) return false;
+      const t = new Date(s.created_at).getTime();
+      if (fromTs !== null && t < fromTs) return false;
+      if (toTs !== null && t > toTs) return false;
+      if (q) {
+        const hay = [
+          s.sample_label,
+          s.batch_no,
+          orders[s.order_id]?.order_number,
+          products[s.product_id]?.name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [samples, orders, products, filters]);
 
   async function load() {
     const { data } = await supabase
@@ -81,24 +118,36 @@ function LabHome() {
         </div>
       </Card>
 
+      <OrdersFilterBar
+        value={filters}
+        onChange={setFilters}
+        stages={LAB_SAMPLE_STAGES}
+        searchPlaceholder="Search by sample label, order #, batch…"
+      />
+
       <div className="space-y-3">
-        {samples.length === 0 && <p className="text-muted-foreground">No active samples.</p>}
-        {samples.map((s) => (
-          <SampleListRow
-            key={s.id}
-            sample={{
-              id: s.id,
-              sample_label: s.sample_label,
-              stage: s.stage,
-              qr_code: s.qr_code,
-              order_id: s.order_id,
-              order_number: orders[s.order_id]?.order_number ?? null,
-              product_name: products[s.product_id]?.name ?? null,
-              batch_no: s.batch_no ?? null,
-              created_at: s.created_at,
-            }}
-          />
-        ))}
+        {samples.length === 0 ? (
+          <p className="text-muted-foreground">No active samples.</p>
+        ) : filteredSamples.length === 0 ? (
+          <p className="text-muted-foreground">No samples match your filters.</p>
+        ) : (
+          filteredSamples.map((s) => (
+            <SampleListRow
+              key={s.id}
+              sample={{
+                id: s.id,
+                sample_label: s.sample_label,
+                stage: s.stage,
+                qr_code: s.qr_code,
+                order_id: s.order_id,
+                order_number: orders[s.order_id]?.order_number ?? null,
+                product_name: products[s.product_id]?.name ?? null,
+                batch_no: s.batch_no ?? null,
+                created_at: s.created_at,
+              }}
+            />
+          ))
+        )}
       </div>
     </PortalShell>
   );

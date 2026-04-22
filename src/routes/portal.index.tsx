@@ -1,6 +1,6 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { OrderListRow } from "@/components/OrderListRow";
 import { Plus } from "lucide-react";
 import { RoleGuard } from "@/components/RoleGuard";
+import { OrdersFilterBar, EMPTY_FILTERS, filterOrders, type OrdersFilterValue } from "@/components/OrdersFilterBar";
+import { ORDER_STAGES } from "@/lib/stages";
 
 export const Route = createFileRoute("/portal/")({
   component: () => <RoleGuard allow={["customer"]}><PortalHome /></RoleGuard>,
@@ -23,6 +25,8 @@ function PortalHome() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<OrdersFilterValue>(EMPTY_FILTERS);
+  const filtered = useMemo(() => filterOrders(orders, filters), [orders, filters]);
 
   useEffect(() => {
     if (!user) return;
@@ -72,6 +76,12 @@ function PortalHome() {
       </div>
 
       <h2 className="mb-3 text-lg font-semibold">Recent orders</h2>
+      <OrdersFilterBar
+        value={filters}
+        onChange={setFilters}
+        stages={[...ORDER_STAGES, "cancelled"]}
+        searchPlaceholder="Search by order #…"
+      />
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : orders.length === 0 ? (
@@ -81,9 +91,13 @@ function PortalHome() {
             <Button className="mt-4">Place your first order</Button>
           </Link>
         </Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-10 text-center">
+          <p className="text-muted-foreground">No orders match your filters.</p>
+        </Card>
       ) : (
         <div className="space-y-3">
-          {orders.slice(0, 10).map((o) => (
+          {filtered.slice(0, 50).map((o) => (
             <OrderListRow
               key={o.id}
               order={{
