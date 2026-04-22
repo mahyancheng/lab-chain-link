@@ -135,6 +135,9 @@ export function SampleCard(props: SampleCardProps) {
                     <p className="mt-1 text-muted-foreground">Expected TAT: {tatDays} days</p>
                   )}
                 </div>
+                <div className="mt-2 rounded-xl border border-border/60 bg-card p-3 text-xs text-muted-foreground">
+                  Scan the QR to view this sample’s status, basic details, and issued report once released.
+                </div>
                 {intake?.disposition && (
                   <div className="mt-2 rounded-xl border border-border/60 bg-card p-3 text-xs">
                     <span className="font-semibold">Intake:</span> {intake.disposition}

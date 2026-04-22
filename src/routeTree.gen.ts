@@ -19,6 +19,7 @@ import { Route as LabScanRouteImport } from './routes/lab.scan'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
+import { Route as PortalSamplesSampleIdRouteImport } from './routes/portal.samples.$sampleId'
 import { Route as PortalOrdersOrderIdRouteImport } from './routes/portal.orders.$orderId'
 import { Route as LabSamplesSampleIdRouteImport } from './routes/lab.samples.$sampleId'
 
@@ -72,6 +73,11 @@ const AdminConfigRoute = AdminConfigRouteImport.update({
   path: '/admin/config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalSamplesSampleIdRoute = PortalSamplesSampleIdRouteImport.update({
+  id: '/portal/samples/$sampleId',
+  path: '/portal/samples/$sampleId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalOrdersOrderIdRoute = PortalOrdersOrderIdRouteImport.update({
   id: '/portal/orders/$orderId',
   path: '/portal/orders/$orderId',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/portal/': typeof PortalIndexRoute
   '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
+  '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalIndexRoute
   '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
+  '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/portal/': typeof PortalIndexRoute
   '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
+  '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/portal/'
     | '/lab/samples/$sampleId'
     | '/portal/orders/$orderId'
+    | '/portal/samples/$sampleId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/lab/samples/$sampleId'
     | '/portal/orders/$orderId'
+    | '/portal/samples/$sampleId'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/portal/'
     | '/lab/samples/$sampleId'
     | '/portal/orders/$orderId'
+    | '/portal/samples/$sampleId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   PortalIndexRoute: typeof PortalIndexRoute
   LabSamplesSampleIdRoute: typeof LabSamplesSampleIdRoute
   PortalOrdersOrderIdRoute: typeof PortalOrdersOrderIdRoute
+  PortalSamplesSampleIdRoute: typeof PortalSamplesSampleIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/samples/$sampleId': {
+      id: '/portal/samples/$sampleId'
+      path: '/portal/samples/$sampleId'
+      fullPath: '/portal/samples/$sampleId'
+      preLoaderRoute: typeof PortalSamplesSampleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/orders/$orderId': {
       id: '/portal/orders/$orderId'
       path: '/portal/orders/$orderId'
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalIndexRoute: PortalIndexRoute,
   LabSamplesSampleIdRoute: LabSamplesSampleIdRoute,
   PortalOrdersOrderIdRoute: PortalOrdersOrderIdRoute,
+  PortalSamplesSampleIdRoute: PortalSamplesSampleIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
