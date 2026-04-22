@@ -13,7 +13,7 @@ import { STAGE_LABEL } from "@/lib/stages";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/portal/samples/$sampleId")({
-  component: () => <RoleGuard allow={["customer", "admin", "lab"]}><SampleReportPage /></RoleGuard>,
+  component: () => <RoleGuard allow={["customer"]}><SampleReportPage /></RoleGuard>,
 });
 
 const CUSTOMER_NAV = [

@@ -11,7 +11,7 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { SampleListRow } from "@/components/SampleListRow";
 
 export const Route = createFileRoute("/lab/")({
-  component: () => <RoleGuard allow={["lab", "admin"]}><LabHome /></RoleGuard>,
+  component: () => <RoleGuard allow={["lab"]}><LabHome /></RoleGuard>,
 });
 
 const NAV = [
