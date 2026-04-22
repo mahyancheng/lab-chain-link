@@ -139,7 +139,7 @@ export function PortalShell({
         </header>
         <main className="mx-auto w-full max-w-7xl px-3 py-4 animate-fade-in sm:px-6 sm:py-8">{children}</main>
       </SidebarInset>
-      {requireRole === "customer" && <SupportChatWidget />}
+      {roles.includes("customer") && <SupportChatWidget />}
     </SidebarProvider>
   );
 }
