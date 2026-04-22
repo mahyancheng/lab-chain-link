@@ -74,9 +74,11 @@ function OrderDetail() {
       const { data: pay } = await supabase.from("payments").select("*").eq("order_id", orderId).maybeSingle();
       setPayment(pay);
 
-      if (o) setOrderQr(await qrDataUrl(o.id, 220));
+      if (o) setOrderQr(await qrDataUrl(`${window.location.origin}/portal/orders/${o.id}`, 220));
       const qrMap: Record<string, string> = {};
-      for (const s of ss ?? []) qrMap[s.id] = await qrDataUrl(s.id, 180);
+      for (const s of ss ?? []) {
+        qrMap[s.id] = await qrDataUrl(`${window.location.origin}/portal/samples/${s.id}`, 180);
+      }
       setSampleQrs(qrMap);
 
       // Load results + parameters for compliance pack
