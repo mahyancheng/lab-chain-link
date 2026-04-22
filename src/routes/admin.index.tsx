@@ -1,17 +1,17 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { STAGE_LABEL } from "@/lib/stages";
+import { STAGE_LABEL, ORDER_STAGES } from "@/lib/stages";
 import { RoleGuard } from "@/components/RoleGuard";
 import { OrderListRow } from "@/components/OrderListRow";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { OrdersFilterBar, EMPTY_FILTERS, filterOrders, type OrdersFilterValue } from "@/components/OrdersFilterBar";
 
 export const Route = createFileRoute("/admin/")({
   component: () => <RoleGuard allow={["admin"]}><AdminHome /></RoleGuard>,
@@ -159,21 +159,32 @@ function AdminHome() {
 
       <Card className="p-5">
         <h2 className="mb-3 font-semibold">Recent orders</h2>
-        <div className="space-y-2">
-          {orders.map((o) => (
-            <OrderListRow
-              key={o.id}
-              order={{
-                id: o.id,
-                order_number: o.order_number,
-                stage: o.stage,
-                total: Number(o.total ?? 0),
-                delivery_type: o.delivery_type,
-                created_at: o.created_at,
-              }}
-            />
-          ))}
-        </div>
+        <OrdersFilterBar
+          value={filters}
+          onChange={setFilters}
+          stages={[...ORDER_STAGES, "cancelled"]}
+        />
+        {filtered.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No orders match your filters.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map((o) => (
+              <OrderListRow
+                key={o.id}
+                order={{
+                  id: o.id,
+                  order_number: o.order_number,
+                  stage: o.stage,
+                  total: Number(o.total ?? 0),
+                  delivery_type: o.delivery_type,
+                  created_at: o.created_at,
+                }}
+              />
+            ))}
+          </div>
+        )}
       </Card>
     </PortalShell>
   );
