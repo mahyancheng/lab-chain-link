@@ -14,14 +14,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as LabIndexRouteImport } from './routes/lab.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PortalSupportRouteImport } from './routes/portal.support'
 import { Route as PortalNewRouteImport } from './routes/portal.new'
 import { Route as LabScanRouteImport } from './routes/lab.scan'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
+import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
 import { Route as PortalSamplesSampleIdRouteImport } from './routes/portal.samples.$sampleId'
 import { Route as PortalOrdersOrderIdRouteImport } from './routes/portal.orders.$orderId'
 import { Route as LabSamplesSampleIdRouteImport } from './routes/lab.samples.$sampleId'
+import { Route as AdminCustomersCustomerIdRouteImport } from './routes/admin.customers.$customerId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -46,6 +49,11 @@ const LabIndexRoute = LabIndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalSupportRoute = PortalSupportRouteImport.update({
+  id: '/portal/support',
+  path: '/portal/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalNewRoute = PortalNewRouteImport.update({
@@ -73,6 +81,11 @@ const AdminConfigRoute = AdminConfigRouteImport.update({
   path: '/admin/config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCustomersIndexRoute = AdminCustomersIndexRouteImport.update({
+  id: '/admin/customers/',
+  path: '/admin/customers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalSamplesSampleIdRoute = PortalSamplesSampleIdRouteImport.update({
   id: '/portal/samples/$sampleId',
   path: '/portal/samples/$sampleId',
@@ -88,6 +101,12 @@ const LabSamplesSampleIdRoute = LabSamplesSampleIdRouteImport.update({
   path: '/lab/samples/$sampleId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCustomersCustomerIdRoute =
+  AdminCustomersCustomerIdRouteImport.update({
+    id: '/admin/customers/$customerId',
+    path: '/admin/customers/$customerId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -97,12 +116,15 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
+  '/portal/support': typeof PortalSupportRoute
   '/admin/': typeof AdminIndexRoute
   '/lab/': typeof LabIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/admin/customers/$customerId': typeof AdminCustomersCustomerIdRoute
   '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
   '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
+  '/admin/customers/': typeof AdminCustomersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -112,12 +134,15 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
+  '/portal/support': typeof PortalSupportRoute
   '/admin': typeof AdminIndexRoute
   '/lab': typeof LabIndexRoute
   '/portal': typeof PortalIndexRoute
+  '/admin/customers/$customerId': typeof AdminCustomersCustomerIdRoute
   '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
   '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
+  '/admin/customers': typeof AdminCustomersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,12 +153,15 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/lab/scan': typeof LabScanRoute
   '/portal/new': typeof PortalNewRoute
+  '/portal/support': typeof PortalSupportRoute
   '/admin/': typeof AdminIndexRoute
   '/lab/': typeof LabIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/admin/customers/$customerId': typeof AdminCustomersCustomerIdRoute
   '/lab/samples/$sampleId': typeof LabSamplesSampleIdRoute
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
   '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
+  '/admin/customers/': typeof AdminCustomersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -145,12 +173,15 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
+    | '/portal/support'
     | '/admin/'
     | '/lab/'
     | '/portal/'
+    | '/admin/customers/$customerId'
     | '/lab/samples/$sampleId'
     | '/portal/orders/$orderId'
     | '/portal/samples/$sampleId'
+    | '/admin/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -160,12 +191,15 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
+    | '/portal/support'
     | '/admin'
     | '/lab'
     | '/portal'
+    | '/admin/customers/$customerId'
     | '/lab/samples/$sampleId'
     | '/portal/orders/$orderId'
     | '/portal/samples/$sampleId'
+    | '/admin/customers'
   id:
     | '__root__'
     | '/'
@@ -175,12 +209,15 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/lab/scan'
     | '/portal/new'
+    | '/portal/support'
     | '/admin/'
     | '/lab/'
     | '/portal/'
+    | '/admin/customers/$customerId'
     | '/lab/samples/$sampleId'
     | '/portal/orders/$orderId'
     | '/portal/samples/$sampleId'
+    | '/admin/customers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -191,12 +228,15 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   LabScanRoute: typeof LabScanRoute
   PortalNewRoute: typeof PortalNewRoute
+  PortalSupportRoute: typeof PortalSupportRoute
   AdminIndexRoute: typeof AdminIndexRoute
   LabIndexRoute: typeof LabIndexRoute
   PortalIndexRoute: typeof PortalIndexRoute
+  AdminCustomersCustomerIdRoute: typeof AdminCustomersCustomerIdRoute
   LabSamplesSampleIdRoute: typeof LabSamplesSampleIdRoute
   PortalOrdersOrderIdRoute: typeof PortalOrdersOrderIdRoute
   PortalSamplesSampleIdRoute: typeof PortalSamplesSampleIdRoute
+  AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -236,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/support': {
+      id: '/portal/support'
+      path: '/portal/support'
+      fullPath: '/portal/support'
+      preLoaderRoute: typeof PortalSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/new': {
       id: '/portal/new'
       path: '/portal/new'
@@ -271,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/customers/': {
+      id: '/admin/customers/'
+      path: '/admin/customers'
+      fullPath: '/admin/customers/'
+      preLoaderRoute: typeof AdminCustomersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/samples/$sampleId': {
       id: '/portal/samples/$sampleId'
       path: '/portal/samples/$sampleId'
@@ -292,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabSamplesSampleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/customers/$customerId': {
+      id: '/admin/customers/$customerId'
+      path: '/admin/customers/$customerId'
+      fullPath: '/admin/customers/$customerId'
+      preLoaderRoute: typeof AdminCustomersCustomerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -303,12 +364,15 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   LabScanRoute: LabScanRoute,
   PortalNewRoute: PortalNewRoute,
+  PortalSupportRoute: PortalSupportRoute,
   AdminIndexRoute: AdminIndexRoute,
   LabIndexRoute: LabIndexRoute,
   PortalIndexRoute: PortalIndexRoute,
+  AdminCustomersCustomerIdRoute: AdminCustomersCustomerIdRoute,
   LabSamplesSampleIdRoute: LabSamplesSampleIdRoute,
   PortalOrdersOrderIdRoute: PortalOrdersOrderIdRoute,
   PortalSamplesSampleIdRoute: PortalSamplesSampleIdRoute,
+  AdminCustomersIndexRoute: AdminCustomersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -172,6 +172,39 @@ export type Database = {
           },
         ]
       }
+      customer_messages: {
+        Row: {
+          author_id: string
+          author_role: Database["public"]["Enums"]["app_role"]
+          body: string
+          created_at: string
+          customer_id: string
+          id: string
+          internal: boolean
+          order_ref: string | null
+        }
+        Insert: {
+          author_id: string
+          author_role: Database["public"]["Enums"]["app_role"]
+          body: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          internal?: boolean
+          order_ref?: string | null
+        }
+        Update: {
+          author_id?: string
+          author_role?: Database["public"]["Enums"]["app_role"]
+          body?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          internal?: boolean
+          order_ref?: string | null
+        }
+        Relationships: []
+      }
       exceptions: {
         Row: {
           created_at: string

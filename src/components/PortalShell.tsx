@@ -13,6 +13,8 @@ import {
   Settings,
   Users,
   Wallet,
+  MessageSquare,
+  UserSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,6 +38,8 @@ function iconFor(to: string, label: string) {
   if (l.includes("new")) return PlusCircle;
   if (l.includes("queue") || l.includes("order")) return ListOrdered;
   if (l.includes("scan")) return ScanLine;
+  if (l.includes("support")) return MessageSquare;
+  if (l.includes("customer")) return UserSquare;
   if (l.includes("user")) return Users;
   if (l.includes("finance") || l.includes("billing")) return Wallet;
   if (l.includes("config") || l.includes("setting")) return Settings;
