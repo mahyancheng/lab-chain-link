@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Save, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { getLalamoveQuote, bookLalamove, processRazorpayPayment } from "@/lib/mock-services";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -28,31 +28,55 @@ interface SampleRow {
   product_id: string;
   template_id: string | null;
   sample_label: string;
+  batch_no: string;
+  origin: string;
+  composition: string;
 }
+
+const SAME_DAY_CUTOFF_HOUR = 12; // 12:00 PM local
 
 function NewOrder() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [panels, setPanels] = useState<any[]>([]);
   const [pickup, setPickup] = useState("");
-  const [dropoff, setDropoff] = useState("CD Agrovet Lab, Mumbai");
+  const [dropoff, setDropoff] = useState("CD Agrovet Lab, Klang");
   const [delivery, setDelivery] = useState<"same_day" | "standard">("standard");
   const [notes, setNotes] = useState("");
   const [samples, setSamples] = useState<SampleRow[]>([]);
   const [quote, setQuote] = useState<{ amount: number; etaMinutes: number; quoteId: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [panelName, setPanelName] = useState("");
 
   useEffect(() => {
     supabase.from("products").select("*").eq("active", true).then(({ data }) => setProducts(data ?? []));
     supabase.from("test_templates").select("*").eq("active", true).then(({ data }) => setTemplates(data ?? []));
-  }, []);
+    if (user) {
+      supabase.from("saved_test_panels").select("*").eq("customer_id", user.id).then(({ data }) => setPanels(data ?? []));
+    }
+  }, [user]);
+
+  // Same-day cutoff guard
+  const sameDayBlocked = (() => {
+    if (delivery !== "same_day") return false;
+    const now = new Date();
+    return now.getHours() >= SAME_DAY_CUTOFF_HOUR;
+  })();
 
   function addSample() {
     if (!products[0]) return;
     setSamples((s) => [
       ...s,
-      { product_id: products[0].id, template_id: null, sample_label: `Sample ${s.length + 1}` },
+      {
+        product_id: products[0].id,
+        template_id: null,
+        sample_label: `Sample ${s.length + 1}`,
+        batch_no: "",
+        origin: "",
+        composition: "",
+      },
     ]);
   }
 
@@ -64,6 +88,40 @@ function NewOrder() {
     setSamples((s) => s.filter((_, idx) => idx !== i));
   }
 
+  async function savePanel() {
+    if (!user || samples.length === 0) return toast.error("Add samples first");
+    if (!panelName.trim()) return toast.error("Panel name required");
+    const items = samples.map((s) => ({
+      product_id: s.product_id,
+      template_id: s.template_id,
+      sample_label: s.sample_label,
+    }));
+    const { data, error } = await supabase
+      .from("saved_test_panels")
+      .insert({ customer_id: user.id, name: panelName.trim(), items })
+      .select()
+      .single();
+    if (error) return toast.error(error.message);
+    setPanels((p) => [...p, data]);
+    setPanelName("");
+    toast.success("Panel saved");
+  }
+
+  function loadPanel(panelId: string) {
+    const p = panels.find((x) => x.id === panelId);
+    if (!p) return;
+    const loaded: SampleRow[] = (p.items ?? []).map((it: any, i: number) => ({
+      product_id: it.product_id,
+      template_id: it.template_id ?? null,
+      sample_label: it.sample_label ?? `Sample ${i + 1}`,
+      batch_no: "",
+      origin: "",
+      composition: "",
+    }));
+    setSamples(loaded);
+    toast.success(`Loaded "${p.name}"`);
+  }
+
   const subtotal = samples.reduce((sum, s) => {
     const p = products.find((pr) => pr.id === s.product_id);
     return sum + (p ? Number(p.base_price) : 0);
@@ -72,15 +130,15 @@ function NewOrder() {
 
   async function fetchQuote() {
     if (!pickup) return toast.error("Pickup address required");
+    if (sameDayBlocked) return toast.error(`Same-day cutoff is ${SAME_DAY_CUTOFF_HOUR}:00. Choose Standard.`);
     setBusy(true);
     const q = await getLalamoveQuote({ pickup, dropoff, deliveryType: delivery });
     setQuote(q);
     setBusy(false);
-    toast.success(`Quote: ₹${q.amount} · ETA ${q.etaMinutes}m`);
+    toast.success(`Quote: RM${q.amount} · ETA ${q.etaMinutes}m`);
   }
 
   async function placeOrder() {
-    // Verify a live session exists — RLS requires auth.uid()
     const { data: sessionData } = await supabase.auth.getSession();
     const authedUser = sessionData.session?.user;
     if (!authedUser) {
@@ -90,9 +148,9 @@ function NewOrder() {
     }
     if (samples.length === 0) return toast.error("Add at least one sample");
     if (!quote) return toast.error("Get a delivery quote first");
+    if (sameDayBlocked) return toast.error("Same-day no longer available today");
     setBusy(true);
     try {
-      // 1. Create order
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .insert({
@@ -110,17 +168,18 @@ function NewOrder() {
         .single();
       if (oErr || !order) throw oErr ?? new Error("Order creation failed");
 
-      // 2. Create samples
       const sampleRows = samples.map((s) => ({
         order_id: order.id,
         product_id: s.product_id,
         template_id: s.template_id,
         sample_label: s.sample_label,
+        batch_no: s.batch_no || null,
+        origin: s.origin || null,
+        composition: s.composition || null,
       }));
       const { error: sErr } = await supabase.from("order_samples").insert(sampleRows);
       if (sErr) throw sErr;
 
-      // 3. Mock payment
       const pay = await processRazorpayPayment(total);
       await supabase.from("payments").insert({
         order_id: order.id,
@@ -130,7 +189,6 @@ function NewOrder() {
         paid_at: new Date().toISOString(),
       });
 
-      // 4. Book shipment
       const booking = await bookLalamove(quote.quoteId);
       await supabase.from("shipments").insert({
         order_id: order.id,
@@ -140,7 +198,6 @@ function NewOrder() {
         status: "scheduled",
       });
 
-      // 5. Stage -> paid + custody events
       await supabase.from("orders").update({ stage: "paid" }).eq("id", order.id);
       await supabase.from("chain_of_custody_events").insert([
         { order_id: order.id, actor_id: authedUser.id, event_type: "ordered", description: "Order placed" },
@@ -164,45 +221,80 @@ function NewOrder() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card className="p-5">
-            <h2 className="mb-3 font-semibold">Samples</h2>
-            <div className="space-y-3">
-              {samples.map((s, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2">
-                  <Input
-                    className="col-span-3"
-                    value={s.sample_label}
-                    onChange={(e) => updateSample(i, { sample_label: e.target.value })}
-                  />
-                  <Select value={s.product_id} onValueChange={(v) => updateSample(i, { product_id: v })}>
-                    <SelectTrigger className="col-span-5"><SelectValue /></SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          [{p.category}] {p.name} — RM{p.base_price}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={s.template_id ?? "none"}
-                    onValueChange={(v) => updateSample(i, { template_id: v === "none" ? null : v })}
-                  >
-                    <SelectTrigger className="col-span-3"><SelectValue placeholder="Template" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No template</SelectItem>
-                      {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="icon" onClick={() => removeSample(i)} className="col-span-1">
-                    <Trash2 className="h-4 w-4" />
+          {panels.length > 0 && (
+            <Card className="p-5">
+              <h2 className="mb-3 flex items-center gap-2 font-semibold">
+                <Bookmark className="h-4 w-4" /> Saved test panels — 1-click reorder
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {panels.map((p) => (
+                  <Button key={p.id} size="sm" variant="outline" onClick={() => loadPanel(p.id)}>
+                    {p.name} ({(p.items ?? []).length})
                   </Button>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <Card className="p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold">Samples & material details</h2>
+            </div>
+            <div className="space-y-4">
+              {samples.map((s, i) => (
+                <div key={i} className="space-y-2 rounded-lg border p-3">
+                  <div className="grid grid-cols-12 gap-2">
+                    <Input
+                      className="col-span-3"
+                      placeholder="Label"
+                      value={s.sample_label}
+                      onChange={(e) => updateSample(i, { sample_label: e.target.value })}
+                    />
+                    <Select value={s.product_id} onValueChange={(v) => updateSample(i, { product_id: v })}>
+                      <SelectTrigger className="col-span-5"><SelectValue /></SelectTrigger>
+                      <SelectContent className="max-h-80">
+                        {products.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            [{p.category}] {p.name} — RM{p.base_price}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={s.template_id ?? "none"}
+                      onValueChange={(v) => updateSample(i, { template_id: v === "none" ? null : v })}
+                    >
+                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Template" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No template</SelectItem>
+                        {templates.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="icon" onClick={() => removeSample(i)} className="col-span-1">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input placeholder="Batch / lot no." value={s.batch_no} onChange={(e) => updateSample(i, { batch_no: e.target.value })} />
+                    <Input placeholder="Origin (mill / site)" value={s.origin} onChange={(e) => updateSample(i, { origin: e.target.value })} />
+                    <Input placeholder="Composition / notes" value={s.composition} onChange={(e) => updateSample(i, { composition: e.target.value })} />
+                  </div>
                 </div>
               ))}
               <Button variant="outline" onClick={addSample}><Plus className="mr-2 h-4 w-4" />Add sample</Button>
             </div>
+
+            {samples.length > 0 && (
+              <div className="mt-4 flex items-end gap-2 border-t pt-4">
+                <div className="flex-1">
+                  <Label className="text-xs">Save as panel for next time</Label>
+                  <Input value={panelName} onChange={(e) => setPanelName(e.target.value)} placeholder="e.g. Monthly NPK panel" />
+                </div>
+                <Button variant="outline" onClick={savePanel}><Save className="mr-2 h-4 w-4" />Save panel</Button>
+              </div>
+            )}
           </Card>
 
           <Card className="p-5">
@@ -217,13 +309,16 @@ function NewOrder() {
                 <Input value={dropoff} onChange={(e) => setDropoff(e.target.value)} />
               </div>
               <div>
-                <Label>Delivery</Label>
+                <Label>Service lane</Label>
                 <RadioGroup value={delivery} onValueChange={(v) => { setDelivery(v as any); setQuote(null); }} className="flex gap-6 pt-1">
-                  <label className="flex items-center gap-2"><RadioGroupItem value="standard" />Standard (next-day)</label>
-                  <label className="flex items-center gap-2"><RadioGroupItem value="same_day" />Same-day</label>
+                  <label className="flex items-center gap-2"><RadioGroupItem value="standard" />Standard (nationwide courier)</label>
+                  <label className="flex items-center gap-2"><RadioGroupItem value="same_day" />Same-day (Klang Valley, before {SAME_DAY_CUTOFF_HOUR}:00)</label>
                 </RadioGroup>
+                {sameDayBlocked && (
+                  <p className="mt-1 text-xs text-destructive">Same-day cutoff has passed. Choose Standard.</p>
+                )}
               </div>
-              <Button variant="outline" onClick={fetchQuote} disabled={busy}>Get Lalamove quote</Button>
+              <Button variant="outline" onClick={fetchQuote} disabled={busy || sameDayBlocked}>Get Lalamove quote</Button>
               {quote && (
                 <div className="text-sm text-muted-foreground">
                   Quote {quote.quoteId}: RM{quote.amount} · ETA {quote.etaMinutes} min
