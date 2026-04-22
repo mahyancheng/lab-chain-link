@@ -13,6 +13,7 @@ import { Download, ArrowLeft, CheckCircle2, Package, FileCheck2 } from "lucide-r
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
 import { useAuth } from "@/hooks/useAuth";
+import { SampleCard } from "@/components/SampleCard";
 
 export const Route = createFileRoute("/portal/orders/$orderId")({
   component: () => <RoleGuard allow={["customer", "admin", "lab"]}><OrderDetail /></RoleGuard>,
@@ -228,58 +229,35 @@ function OrderDetail() {
             <p className="mb-4 text-xs text-muted-foreground">
               Print each QR code and attach it to the matching sample container. Labs will scan to look up details.
             </p>
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-1">
               {samples.map((s) => {
                 const product = products[s.product_id];
                 return (
-                  <div key={s.id} className="rounded-lg border p-4">
-                    <div className="flex gap-4">
-                      {sampleQrs[s.id] ? (
-                        <img src={sampleQrs[s.id]} alt={`QR for ${s.sample_label}`}
-                          className="h-32 w-32 rounded-md border bg-white p-1" />
-                      ) : (
-                        <div className="h-32 w-32 animate-pulse rounded-md bg-muted" />
-                      )}
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div>
-                            <div className="font-semibold">{s.sample_label}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {product?.name}
-                              {product?.item_code ? ` · ${product.item_code}` : ""}
-                              {product?.category ? ` · ${product.category}` : ""}
-                            </div>
-                          </div>
-                          <Badge variant="outline">{STAGE_LABEL[s.stage] ?? s.stage}</Badge>
-                        </div>
-                        {(s.batch_no || s.origin || s.composition) && (
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            {s.batch_no && <>Batch: <b>{s.batch_no}</b> · </>}
-                            {s.origin && <>Origin: <b>{s.origin}</b> · </>}
-                            {s.composition && <>Composition: <b>{s.composition}</b></>}
-                          </div>
-                        )}
-                        <div className="mt-2 rounded-md bg-muted/50 p-2 text-xs">
-                          <div className="mb-1 font-medium uppercase tracking-wide text-muted-foreground">
-                            Packaging instructions
-                          </div>
-                          <p>{product?.packaging_instructions ?? "Pack in clean, sealed container with tamper-evident seal. Label with sample QR."}</p>
-                          {product?.tat_days && (
-                            <p className="mt-1 text-muted-foreground">Expected TAT: {product.tat_days} days</p>
-                          )}
-                        </div>
-                        {isStaff && s.intake_at && (
-                          <div className="mt-2 rounded-md border bg-card p-2 text-xs">
-                            <b>Intake:</b> {s.intake_disposition} · {s.intake_weight_g}g · {s.intake_condition}
-                            {s.intake_notes && <> — {s.intake_notes}</>}
-                          </div>
-                        )}
-                        <div className="mt-1 font-mono text-[10px] text-muted-foreground break-all">
-                          Sample ID: {s.id}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <SampleCard
+                    key={s.id}
+                    sampleId={s.id}
+                    label={s.sample_label}
+                    stage={s.stage}
+                    productName={product?.name}
+                    itemCode={product?.item_code}
+                    category={product?.category}
+                    batchNo={s.batch_no}
+                    origin={s.origin}
+                    composition={s.composition}
+                    packagingInstructions={product?.packaging_instructions}
+                    tatDays={product?.tat_days}
+                    qrDataUrl={sampleQrs[s.id]}
+                    intake={
+                      isStaff && s.intake_at
+                        ? {
+                            disposition: s.intake_disposition,
+                            weightG: s.intake_weight_g,
+                            condition: s.intake_condition,
+                            notes: s.intake_notes,
+                          }
+                        : null
+                    }
+                  />
                 );
               })}
             </div>
