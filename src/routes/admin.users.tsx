@@ -467,6 +467,15 @@ function AdminUsers() {
                         {new Date(u.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
+                        {authStatus[u.id]?.banned ? (
+                          <Badge variant="destructive">Disabled</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-green-600">
+                            Active
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {u.roles.length === 0 ? (
                             <span className="text-xs text-muted-foreground">
@@ -501,6 +510,57 @@ function AdminUsers() {
                           </TableCell>
                         );
                       })}
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={savingId === u.id}
+                              aria-label="Account actions"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewPassword("");
+                                setPwTarget(u);
+                              }}
+                            >
+                              <KeyRound className="mr-2 h-4 w-4" />
+                              Change password
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {authStatus[u.id]?.banned ? (
+                              <DropdownMenuItem
+                                onClick={() => toggleBanned(u, false)}
+                              >
+                                <CircleCheck className="mr-2 h-4 w-4" />
+                                Re-enable account
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                disabled={isMe}
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      `Disable sign-in for ${u.full_name ?? "this user"}? Their data is preserved and they can be re-enabled later.`,
+                                    )
+                                  ) {
+                                    toggleBanned(u, true);
+                                  }
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Ban className="mr-2 h-4 w-4" />
+                                Disable account
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   );
                 })
