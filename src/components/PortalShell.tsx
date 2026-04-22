@@ -35,9 +35,9 @@ export function PortalShell({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
+      <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-primary">
+          <Link to="/" className="flex items-center gap-2 font-semibold text-primary hover-scale">
             <FlaskConical className="h-5 w-5" />
             CD Agrovet
           </Link>
@@ -46,8 +46,8 @@ export function PortalShell({
               <Link
                 key={n.to}
                 to={n.to as "/portal"}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                activeProps={{ className: "bg-secondary text-secondary-foreground" }}
+                className="pill-nav"
+                activeProps={{ className: "pill-nav-active" }}
               >
                 {n.label}
               </Link>
@@ -61,7 +61,7 @@ export function PortalShell({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-6 py-8 animate-fade-in">{children}</main>
     </div>
   );
 }
