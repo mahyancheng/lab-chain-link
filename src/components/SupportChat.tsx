@@ -38,7 +38,7 @@ interface OrderLite {
 /**
  * Parse a message body and replace [[order:UUID]] tokens with hover-cards.
  */
-function renderBody(body: string, customerOrderRoute: boolean) {
+function renderBody(body: string, _customerOrderRoute: boolean, onPrimary: boolean) {
   const parts: (string | { id: string })[] = [];
   const re = /\[\[order:([0-9a-f-]{36})\]\]/gi;
   let last = 0;
@@ -56,7 +56,8 @@ function renderBody(body: string, customerOrderRoute: boolean) {
       <OrderRefHover
         key={i}
         orderId={p.id}
-        to={customerOrderRoute ? "/portal/orders/$orderId" : "/portal/orders/$orderId"}
+        to="/portal/orders/$orderId"
+        onPrimary={onPrimary}
       />
     ),
   );
@@ -218,7 +219,7 @@ export function SupportChat({
                         : "bg-muted text-foreground",
                   )}
                 >
-                  {renderBody(m.body, !isStaff)}
+                  {renderBody(m.body, !isStaff, mine && !m.internal)}
                 </div>
               </div>
             );

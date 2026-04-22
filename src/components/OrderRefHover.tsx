@@ -26,11 +26,14 @@ export function OrderRefHover({
   orderId,
   to = "/portal/orders/$orderId",
   fallbackLabel,
+  onPrimary = false,
 }: {
   orderId: string;
   /** Defaults to the customer-facing portal route. */
   to?: "/portal/orders/$orderId";
   fallbackLabel?: string;
+  /** Set true when rendered on a primary-colored surface (e.g. own chat bubble). */
+  onPrimary?: boolean;
 }) {
   const [order, setOrder] = useState<OrderLite | null | undefined>(
     cache.has(orderId) ? cache.get(orderId) : undefined,
@@ -61,7 +64,11 @@ export function OrderRefHover({
         <Link
           to={to}
           params={{ orderId }}
-          className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary underline-offset-2 hover:underline"
+          className={
+            onPrimary
+              ? "inline-flex items-center gap-1 rounded bg-primary-foreground/20 px-1.5 py-0.5 text-xs font-medium text-primary-foreground underline-offset-2 hover:underline"
+              : "inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary underline-offset-2 hover:underline"
+          }
         >
           <Package className="h-3 w-3" />
           {label}
