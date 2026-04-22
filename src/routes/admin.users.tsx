@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,9 +17,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Search, Users } from "lucide-react";
+import { Search, Users, UserPlus } from "lucide-react";
+import { adminCreateUser } from "@/server/admin-users";
 
 export const Route = createFileRoute("/admin/users")({
   component: () => (
@@ -53,6 +64,40 @@ function AdminUsers() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newRoles, setNewRoles] = useState<Role[]>(["customer"]);
+
+  async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setCreating(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      await adminCreateUser({
+        data: {
+          email: String(fd.get("email") ?? ""),
+          password: String(fd.get("password") ?? ""),
+          full_name: String(fd.get("full_name") ?? ""),
+          company: String(fd.get("company") ?? ""),
+          phone: String(fd.get("phone") ?? ""),
+          roles: newRoles,
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Account created");
+      setCreateOpen(false);
+      setNewRoles(["customer"]);
+      await load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create account");
+    } finally {
+      setCreating(false);
+    }
+  }
+
 
   async function load() {
     setLoading(true);
@@ -149,7 +194,7 @@ function AdminUsers() {
 
   return (
     <PortalShell title="Admin Portal" nav={NAV} requireRole="admin">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Users & Roles</h1>
           <p className="text-sm text-muted-foreground">
@@ -157,6 +202,100 @@ function AdminUsers() {
             tools.
           </p>
         </div>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" />
+              New account
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create account</DialogTitle>
+              <DialogDescription>
+                The user will be able to sign in immediately with the email and
+                password you set.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="full_name">Full name</Label>
+                  <Input id="full_name" name="full_name" required />
+                </div>
+                <div>
+                  <Label htmlFor="company">Company</Label>
+                  <Input id="company" name="company" />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" name="phone" />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" required />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  minLength={6}
+                  required
+                />
+              </div>
+              <div>
+                <Label className="mb-2 block">Roles</Label>
+                <div className="flex flex-wrap gap-3">
+                  {ALL_ROLES.map((r) => {
+                    const checked = newRoles.includes(r);
+                    return (
+                      <label
+                        key={r}
+                        className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm capitalize"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) =>
+                            setNewRoles((prev) =>
+                              v
+                                ? Array.from(new Set([...prev, r]))
+                                : prev.filter((x) => x !== r),
+                            )
+                          }
+                        />
+                        {r}
+                      </label>
+                    );
+                  })}
+                </div>
+                {newRoles.length === 0 && (
+                  <p className="mt-1 text-xs text-destructive">
+                    Select at least one role.
+                  </p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setCreateOpen(false)}
+                  disabled={creating}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={creating || newRoles.length === 0}
+                >
+                  {creating ? "Creating…" : "Create account"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="mb-6 grid gap-3 md:grid-cols-4">
