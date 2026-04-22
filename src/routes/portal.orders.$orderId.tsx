@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { StageTimeline } from "@/components/StageTimeline";
 import { STAGE_LABEL } from "@/lib/stages";
 import { generatePackingSlipPdf, generateCompliancePackPdf } from "@/lib/packing-slip";
-import { qrDataUrl } from "@/lib/qr";
+import { qrDataUrl, qrDataUrls } from "@/lib/qr";
 import { Download, ArrowLeft, CheckCircle2, Package, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -57,45 +57,65 @@ function OrderDetail() {
   const [parameters, setParameters] = useState<Record<string, any>>({});
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const { data: o } = await supabase.from("orders").select("*").eq("id", orderId).single();
+      // Wave 1: order + samples + sibling tables in parallel.
+      const [orderRes, samplesRes, evRes, shRes, payRes] = await Promise.all([
+        supabase.from("orders").select("*").eq("id", orderId).single(),
+        supabase.from("order_samples").select("*").eq("order_id", orderId),
+        supabase.from("chain_of_custody_events").select("*").eq("order_id", orderId).order("created_at"),
+        supabase.from("shipments").select("*").eq("order_id", orderId).maybeSingle(),
+        supabase.from("payments").select("*").eq("order_id", orderId).maybeSingle(),
+      ]);
+      if (cancelled) return;
+      const o = orderRes.data;
+      const ss = samplesRes.data ?? [];
       setOrder(o);
-      const { data: ss } = await supabase.from("order_samples").select("*").eq("order_id", orderId);
-      setSamples(ss ?? []);
-      const ids = Array.from(new Set((ss ?? []).map((s) => s.product_id)));
-      if (ids.length) {
-        const { data: ps } = await supabase.from("products").select("*").in("id", ids);
-        setProducts(Object.fromEntries((ps ?? []).map((p) => [p.id, p])));
-      }
-      const { data: ev } = await supabase
-        .from("chain_of_custody_events").select("*").eq("order_id", orderId).order("created_at");
-      setEvents(ev ?? []);
-      const { data: sh } = await supabase.from("shipments").select("*").eq("order_id", orderId).maybeSingle();
-      setShipment(sh);
-      const { data: pay } = await supabase.from("payments").select("*").eq("order_id", orderId).maybeSingle();
-      setPayment(pay);
+      setSamples(ss);
+      setEvents(evRes.data ?? []);
+      setShipment(shRes.data);
+      setPayment(payRes.data);
 
-      if (o) setOrderQr(await qrDataUrl(`${window.location.origin}/portal/orders/${o.id}`, 220));
-      const qrMap: Record<string, string> = {};
-      for (const s of ss ?? []) {
-        qrMap[s.id] = await qrDataUrl(`${window.location.origin}/portal/samples/${s.id}`, 180);
-      }
-      setSampleQrs(qrMap);
+      const productIds = Array.from(new Set(ss.map((s) => s.product_id)));
+      const sampleIds = ss.map((s) => s.id);
 
-      // Load results + parameters for compliance pack
-      const sampleIds = (ss ?? []).map((s) => s.id);
-      if (sampleIds.length) {
-        const { data: rs } = await supabase.from("test_results").select("*").in("sample_id", sampleIds);
-        const byS: Record<string, any[]> = {};
-        (rs ?? []).forEach((r) => { (byS[r.sample_id] = byS[r.sample_id] ?? []).push(r); });
-        setResults(byS);
-        const paramIds = Array.from(new Set((rs ?? []).map((r) => r.parameter_id)));
-        if (paramIds.length) {
-          const { data: ps } = await supabase.from("test_parameters").select("*").in("id", paramIds);
-          setParameters(Object.fromEntries((ps ?? []).map((p) => [p.id, p])));
-        }
+      // Wave 2: products, results, QR codes — all independent, run together.
+      const productsP = productIds.length
+        ? supabase.from("products").select("*").in("id", productIds)
+        : Promise.resolve({ data: [] as any[] });
+      const resultsP = sampleIds.length
+        ? supabase.from("test_results").select("*").in("sample_id", sampleIds)
+        : Promise.resolve({ data: [] as any[] });
+      const orderQrP = o
+        ? qrDataUrl(`${window.location.origin}/portal/orders/${o.id}`, 220)
+        : Promise.resolve("");
+      const sampleQrsP = qrDataUrls(
+        ss.map((s) => ({ id: s.id, value: `${window.location.origin}/portal/samples/${s.id}` })),
+        180,
+      );
+
+      const [productsRes, resultsRes, orderQrVal, sampleQrsVal] = await Promise.all([
+        productsP, resultsP, orderQrP, sampleQrsP,
+      ]);
+      if (cancelled) return;
+      setProducts(Object.fromEntries((productsRes.data ?? []).map((p: any) => [p.id, p])));
+      setOrderQr(orderQrVal);
+      setSampleQrs(sampleQrsVal);
+
+      const rs = resultsRes.data ?? [];
+      const byS: Record<string, any[]> = {};
+      rs.forEach((r: any) => { (byS[r.sample_id] = byS[r.sample_id] ?? []).push(r); });
+      setResults(byS);
+
+      // Wave 3: parameters (depends on results)
+      const paramIds = Array.from(new Set(rs.map((r: any) => r.parameter_id)));
+      if (paramIds.length) {
+        const { data: ps } = await supabase.from("test_parameters").select("*").in("id", paramIds);
+        if (cancelled) return;
+        setParameters(Object.fromEntries((ps ?? []).map((p) => [p.id, p])));
       }
     })();
+    return () => { cancelled = true; };
   }, [orderId]);
 
   async function downloadPackingSlip() {
