@@ -102,11 +102,6 @@ function Landing() {
             <span className="hidden text-xs text-muted-foreground sm:inline">
               Lab Workspace
             </span>
-            <Link to={dest as "/portal"}>
-              <Button variant="ghost" size="sm">
-                {user ? "Dashboard" : "Sign in"}
-              </Button>
-            </Link>
             <Link to="/auth">
               <Button size="sm">Get started</Button>
             </Link>
