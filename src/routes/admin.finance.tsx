@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -64,7 +65,7 @@ function Finance() {
   return (
     <PortalShell title="Admin Portal" nav={NAV} requireRole="admin">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Finance</h1>
+        <h1 className="text-2xl font-bold"><SplitText>Finance</SplitText></h1>
         <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" />Export CSV</Button>
       </div>
 

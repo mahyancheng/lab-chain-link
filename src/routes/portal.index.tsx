@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -48,7 +49,7 @@ function PortalHome() {
     <PortalShell title="Customer Portal" nav={NAV}>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight"><SplitText>Dashboard</SplitText></h1>
           <p className="text-sm text-muted-foreground">Your orders and lab activity at a glance.</p>
         </div>
         <Link to="/portal/new">

@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -217,7 +218,7 @@ function NewOrder() {
 
   return (
     <PortalShell title="Customer Portal" nav={NAV}>
-      <h1 className="mb-6 text-2xl font-bold">New order</h1>
+      <h1 className="mb-6 text-2xl font-bold"><SplitText>New order</SplitText></h1>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

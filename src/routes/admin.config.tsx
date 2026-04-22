@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -139,7 +140,7 @@ function Config() {
     <PortalShell title="Admin Portal" nav={NAV} requireRole="admin">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Pricing & Tests</h1>
+          <h1 className="text-2xl font-bold"><SplitText>Pricing & Tests</SplitText></h1>
           <p className="text-sm text-muted-foreground">
             Click any test to edit its price, TAT, sample requirements, and packaging.
           </p>

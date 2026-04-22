@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -256,7 +257,7 @@ function SampleDetail() {
 
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{sample.sample_label}</h1>
+          <h1 className="text-2xl font-bold"><SplitText>{sample.sample_label}</SplitText></h1>
           <p className="text-sm text-muted-foreground">
             Order {order?.order_number} · QR <span className="font-mono">{sample.qr_code}</span>
           </p>

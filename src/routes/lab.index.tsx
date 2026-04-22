@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -61,7 +62,7 @@ function LabHome() {
 
   return (
     <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">
-      <h1 className="mb-6 text-2xl font-bold">Active queue</h1>
+      <h1 className="mb-6 text-2xl font-bold"><SplitText>Active queue</SplitText></h1>
 
       <Card className="mb-6 p-4">
         <div className="flex gap-2">

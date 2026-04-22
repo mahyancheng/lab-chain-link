@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -196,7 +197,7 @@ function AdminUsers() {
     <PortalShell title="Admin Portal" nav={NAV} requireRole="admin">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Users & Roles</h1>
+          <h1 className="text-2xl font-bold"><SplitText>Users & Roles</SplitText></h1>
           <p className="text-sm text-muted-foreground">
             Manage who can access the customer portal, lab workspace, and admin
             tools.

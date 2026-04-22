@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -93,7 +94,7 @@ function AdminHome() {
 
   return (
     <PortalShell title="Admin Portal" nav={NAV} requireRole="admin">
-      <h1 className="mb-6 text-2xl font-bold">Operations</h1>
+      <h1 className="mb-6 text-2xl font-bold"><SplitText>Operations</SplitText></h1>
 
       <div className="mb-6 grid gap-3 md:grid-cols-4 lg:grid-cols-8">
         {stages.map((s) => (

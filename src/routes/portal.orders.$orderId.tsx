@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
@@ -207,7 +208,7 @@ function OrderDetail() {
 
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{order.order_number}</h1>
+          <h1 className="text-2xl font-bold"><SplitText>{order.order_number}</SplitText></h1>
           <p className="text-sm text-muted-foreground">
             {new Date(order.created_at).toLocaleString()} · {order.delivery_type.replace("_", " ")}
           </p>
