@@ -25,6 +25,8 @@ function PortalHome() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<OrdersFilterValue>(EMPTY_FILTERS);
+  const filtered = useMemo(() => filterOrders(orders, filters), [orders, filters]);
 
   useEffect(() => {
     if (!user) return;
