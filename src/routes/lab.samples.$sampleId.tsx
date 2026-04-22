@@ -16,6 +16,10 @@ import { ArrowLeft, ShieldCheck, Camera, AlertTriangle, CheckCircle2, XCircle, H
 import { RoleGuard } from "@/components/RoleGuard";
 import { Timeline, type TimelineItem } from "@/components/ui/timeline";
 
+function prettyEventType(t: string) {
+  return t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export const Route = createFileRoute("/lab/samples/$sampleId")({
   component: () => <RoleGuard allow={["lab", "admin"]}><SampleDetail /></RoleGuard>,
 });
@@ -346,6 +350,27 @@ function SampleDetail() {
           )}
         </Card>
       )}
+
+      <Card className="mb-6 p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold">
+          <History className="h-4 w-4" /> Chain of custody
+        </h2>
+        {events.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No events recorded yet.</p>
+        ) : (
+          <Timeline
+            variant="compact"
+            timestampPosition="inline"
+            items={events.map<TimelineItem>((e, i) => ({
+              id: e.id,
+              title: prettyEventType(e.event_type),
+              description: e.description ?? undefined,
+              timestamp: e.created_at,
+              status: i === events.length - 1 ? "active" : "completed",
+            }))}
+          />
+        )}
+      </Card>
 
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">Test results</h2>
