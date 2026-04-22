@@ -29,8 +29,20 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Search, Users, UserPlus } from "lucide-react";
-import { adminCreateUser } from "@/server/admin-users";
+import { Search, Users, UserPlus, KeyRound, Ban, CircleCheck, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  adminCreateUser,
+  adminResetPassword,
+  adminSetUserBanned,
+  adminListUserStatus,
+} from "@/server/admin-users";
 
 export const Route = createFileRoute("/admin/users")({
   component: () => (
@@ -62,21 +74,30 @@ interface UserRow {
 function AdminUsers() {
   const { user: me } = useAuth();
   const [rows, setRows] = useState<UserRow[]>([]);
+  const [authStatus, setAuthStatus] = useState<Record<string, { banned: boolean; email: string | null }>>({});
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newRoles, setNewRoles] = useState<Role[]>(["customer"]);
+  const [pwTarget, setPwTarget] = useState<UserRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+
+  async function authedToken() {
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) throw new Error("Not authenticated");
+    return token;
+  }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     setCreating(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("Not authenticated");
+      const token = await authedToken();
       await adminCreateUser({
         data: {
           email: String(fd.get("email") ?? ""),
@@ -98,7 +119,6 @@ function AdminUsers() {
       setCreating(false);
     }
   }
-
 
   async function load() {
     setLoading(true);
@@ -125,6 +145,63 @@ function AdminUsers() {
     }));
     setRows(merged);
     setLoading(false);
+
+    // Fetch ban status (admin-only server fn)
+    try {
+      const token = await authedToken();
+      const res = await adminListUserStatus({ headers: { Authorization: `Bearer ${token}` } });
+      setAuthStatus(res.users ?? {});
+    } catch (err) {
+      // non-fatal
+      console.warn("Could not load auth status", err);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!pwTarget) return;
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const token = await authedToken();
+      await adminResetPassword({
+        data: { user_id: pwTarget.id, new_password: newPassword },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success(`Password updated for ${pwTarget.full_name ?? "user"}`);
+      setPwTarget(null);
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update password");
+    } finally {
+      setPwSaving(false);
+    }
+  }
+
+  async function toggleBanned(target: UserRow, banned: boolean) {
+    if (target.id === me?.id && banned) {
+      toast.error("You cannot disable your own account");
+      return;
+    }
+    setSavingId(target.id);
+    try {
+      const token = await authedToken();
+      await adminSetUserBanned({
+        data: { user_id: target.id, banned },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAuthStatus((prev) => ({
+        ...prev,
+        [target.id]: { ...(prev[target.id] ?? { email: null }), banned },
+      }));
+      toast.success(banned ? "Account disabled" : "Account re-enabled");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update account");
+    } finally {
+      setSavingId(null);
+    }
   }
 
   useEffect(() => {
@@ -344,24 +421,26 @@ function AdminUsers() {
                 <TableHead>Company</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Joined</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Current roles</TableHead>
                 {ALL_ROLES.map((r) => (
                   <TableHead key={r} className="text-center capitalize">
                     {r}
                   </TableHead>
                 ))}
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -386,6 +465,13 @@ function AdminUsers() {
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {new Date(u.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {authStatus[u.id]?.banned ? (
+                          <Badge variant="destructive">Disabled</Badge>
+                        ) : (
+                          <Badge variant="outline">Active</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
@@ -422,6 +508,57 @@ function AdminUsers() {
                           </TableCell>
                         );
                       })}
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={savingId === u.id}
+                              aria-label="Account actions"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewPassword("");
+                                setPwTarget(u);
+                              }}
+                            >
+                              <KeyRound className="mr-2 h-4 w-4" />
+                              Change password
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {authStatus[u.id]?.banned ? (
+                              <DropdownMenuItem
+                                onClick={() => toggleBanned(u, false)}
+                              >
+                                <CircleCheck className="mr-2 h-4 w-4" />
+                                Re-enable account
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                disabled={isMe}
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      `Disable sign-in for ${u.full_name ?? "this user"}? Their data is preserved and they can be re-enabled later.`,
+                                    )
+                                  ) {
+                                    toggleBanned(u, true);
+                                  }
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Ban className="mr-2 h-4 w-4" />
+                                Disable account
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   );
                 })
@@ -436,6 +573,59 @@ function AdminUsers() {
           <strong>admin</strong> to grant full administrative access.
         </p>
       </Card>
+
+      <Dialog
+        open={!!pwTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPwTarget(null);
+            setNewPassword("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change password</DialogTitle>
+            <DialogDescription>
+              Set a new password for{" "}
+              <strong>{pwTarget?.full_name ?? "this user"}</strong>. They will be
+              able to sign in with the new password immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="new_password">New password</Label>
+              <Input
+                id="new_password"
+                type="password"
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setPwTarget(null);
+                setNewPassword("");
+              }}
+              disabled={pwSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResetPassword}
+              disabled={pwSaving || newPassword.length < 6}
+            >
+              {pwSaving ? "Updating…" : "Update password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PortalShell>
   );
 }

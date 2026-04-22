@@ -70,13 +70,36 @@ function Config() {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
+  const [requiredApprovals, setRequiredApprovals] = useState<1 | 2>(2);
+  const [savingApproval, setSavingApproval] = useState(false);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.from("products").select("*").order("name");
+    const [{ data, error }, settingsRes] = await Promise.all([
+      supabase.from("products").select("*").order("name"),
+      supabase.from("app_settings").select("qa_required_approvals").eq("id", true).maybeSingle(),
+    ]);
     if (error) toast.error(error.message);
     setProducts((data ?? []) as Product[]);
+    if (settingsRes.data?.qa_required_approvals) {
+      setRequiredApprovals(settingsRes.data.qa_required_approvals as 1 | 2);
+    }
     setLoading(false);
+  }
+
+  async function updateRequiredApprovals(next: 1 | 2) {
+    setSavingApproval(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ qa_required_approvals: next })
+      .eq("id", true);
+    setSavingApproval(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setRequiredApprovals(next);
+    toast.success(`QA now requires ${next} approval${next === 1 ? "" : "s"}`);
   }
 
   useEffect(() => {
@@ -150,6 +173,39 @@ function Config() {
           New test
         </Button>
       </div>
+
+      <Card className="mb-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">QA approval policy</h2>
+            <p className="text-sm text-muted-foreground">
+              How many lab staff must approve a sample at QA review before it advances to
+              ready-for-release.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline">Currently: {requiredApprovals}</Badge>
+            <div className="inline-flex rounded-md border p-1">
+              <Button
+                size="sm"
+                variant={requiredApprovals === 1 ? "default" : "ghost"}
+                onClick={() => updateRequiredApprovals(1)}
+                disabled={savingApproval}
+              >
+                1 approver
+              </Button>
+              <Button
+                size="sm"
+                variant={requiredApprovals === 2 ? "default" : "ghost"}
+                onClick={() => updateRequiredApprovals(2)}
+                disabled={savingApproval}
+              >
+                2 approvers
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card className="mb-4 p-3">
         <div className="relative">

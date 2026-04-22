@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          id: boolean
+          qa_required_approvals: number
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          qa_required_approvals?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          qa_required_approvals?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           bucket: string
@@ -474,6 +492,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sample_approvals: {
+        Row: {
+          approver_id: string
+          created_at: string
+          id: string
+          note: string | null
+          sample_id: string
+        }
+        Insert: {
+          approver_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          sample_id: string
+        }
+        Update: {
+          approver_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          sample_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sample_approvals_sample_id_fkey"
+            columns: ["sample_id"]
+            isOneToOne: false
+            referencedRelation: "order_samples"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_test_panels: {
         Row: {

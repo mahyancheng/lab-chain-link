@@ -44,6 +44,9 @@ function SampleDetail() {
   const [reportKind, setReportKind] = useState<"report" | "external_cert">("report");
   const [uploadingReport, setUploadingReport] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<{ approver_id: string; created_at: string; note: string | null }[]>([]);
+  const [requiredApprovals, setRequiredApprovals] = useState<number>(2);
+  const [approveNote, setApproveNote] = useState("");
 
   // Intake form state
   const [weight, setWeight] = useState("");
@@ -82,7 +85,20 @@ function SampleDetail() {
       setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
       setCondition(s.intake_condition ?? "");
       setIntakeNotes(s.intake_notes ?? "");
+
+      const { data: appr } = await supabase
+        .from("sample_approvals")
+        .select("approver_id, created_at, note")
+        .eq("sample_id", s.id)
+        .order("created_at");
+      setApprovals(appr ?? []);
     }
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("qa_required_approvals")
+      .eq("id", true)
+      .maybeSingle();
+    if (settings?.qa_required_approvals) setRequiredApprovals(settings.qa_required_approvals);
   }
 
   useEffect(() => { load(); }, [sampleId]);
@@ -161,21 +177,18 @@ function SampleDetail() {
     const next = nextSampleStage(sample.stage);
     if (!next) return;
 
+    // QA review now requires N distinct lab approvals — block manual advance.
+    if (sample.stage === "qa_review") {
+      return toast.error(`Use the approvals panel below — ${requiredApprovals} approval(s) required.`);
+    }
+
     // Step 5 spec: release is admin-controlled
     if (next === "released" && !isAdmin) {
       return toast.error("Only an Admin can release reports.");
     }
-    // QA verification: prevent same person from QA-verifying their own work
-    if (sample.stage === "qa_review" && sample.intake_by === user.id && !isAdmin) {
-      return toast.error("Separation of duties: another lab member must verify.");
-    }
 
     setBusy(true);
     const updates: any = { stage: next };
-    if (next === "ready_for_release") {
-      updates.qa_verified_by = user.id;
-      updates.qa_verified_at = new Date().toISOString();
-    }
     await supabase.from("order_samples").update(updates).eq("id", sample.id);
     await supabase.from("chain_of_custody_events").insert({
       order_id: sample.order_id,
@@ -196,6 +209,38 @@ function SampleDetail() {
     }
     setBusy(false);
     toast.success(`Stage → ${STAGE_LABEL[next]}`);
+    load();
+  }
+
+  async function submitApproval() {
+    if (!sample || !user) return;
+    if (sample.stage !== "qa_review") return toast.error("Sample is not in QA review");
+    if (sample.intake_by === user.id && !isAdmin) {
+      return toast.error("Separation of duties: another lab member must approve.");
+    }
+    if (approvals.some((a) => a.approver_id === user.id)) {
+      return toast.error("You have already approved this sample.");
+    }
+    setBusy(true);
+    const { error } = await supabase.from("sample_approvals").insert({
+      sample_id: sample.id,
+      approver_id: user.id,
+      note: approveNote.trim() || null,
+    });
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+    await supabase.from("chain_of_custody_events").insert({
+      order_id: sample.order_id,
+      sample_id: sample.id,
+      actor_id: user.id,
+      event_type: "qa_approval",
+      description: `QA approval recorded${approveNote ? `: ${approveNote}` : ""}`,
+    });
+    setApproveNote("");
+    setBusy(false);
+    toast.success("Approval recorded");
     load();
   }
 
@@ -282,7 +327,7 @@ function SampleDetail() {
         </div>
         <div className="flex items-center gap-2">
           <Badge>{STAGE_LABEL[sample.stage]}</Badge>
-          {next && !showIntake && (
+          {next && !showIntake && sample.stage !== "qa_review" && (
             <Button onClick={advance} disabled={busy}>
               {sample.stage === "qa_review" && <ShieldCheck className="mr-2 h-4 w-4" />}
               Advance → {STAGE_LABEL[next]}
@@ -371,6 +416,57 @@ function SampleDetail() {
           />
         )}
       </Card>
+
+      {sample.stage === "qa_review" && (
+        <Card className="mb-6 border-primary/30 bg-primary/5 p-5">
+          <h2 className="mb-2 flex items-center gap-2 font-semibold">
+            <ShieldCheck className="h-4 w-4" /> QA approvals
+          </h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {requiredApprovals === 1
+              ? "1 lab approval required to advance this sample to Ready for release."
+              : `${requiredApprovals} distinct lab approvals required to advance this sample to Ready for release.`}
+          </p>
+          <div className="mb-3 text-sm">
+            <b>{approvals.length}</b> of <b>{requiredApprovals}</b> approval(s) recorded.
+          </div>
+          {approvals.length > 0 && (
+            <ul className="mb-3 space-y-1 text-xs text-muted-foreground">
+              {approvals.map((a) => (
+                <li key={a.approver_id}>
+                  ✓ {a.approver_id === user?.id ? "You" : a.approver_id.slice(0, 8) + "…"} ·{" "}
+                  {new Date(a.created_at).toLocaleString()}
+                  {a.note ? ` — ${a.note}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+          {(() => {
+            const alreadyApproved = !!user && approvals.some((a) => a.approver_id === user.id);
+            const blockedSelf = !!user && sample.intake_by === user.id && !isAdmin;
+            return (
+              <div className="space-y-2">
+                <Textarea
+                  rows={2}
+                  placeholder="Approval note (optional)"
+                  value={approveNote}
+                  onChange={(e) => setApproveNote(e.target.value)}
+                  disabled={alreadyApproved || blockedSelf || busy}
+                />
+                <Button onClick={submitApproval} disabled={alreadyApproved || blockedSelf || busy}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  {alreadyApproved ? "You have approved" : "Approve sample"}
+                </Button>
+                {blockedSelf && (
+                  <p className="text-xs text-destructive">
+                    Separation of duties: you performed intake, another lab member must approve.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </Card>
+      )}
 
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">Test results</h2>
