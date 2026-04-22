@@ -1,15 +1,14 @@
 import { SplitText } from "@/components/ui/split-text";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { STAGE_LABEL } from "@/lib/stages";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
+import { SampleListRow } from "@/components/SampleListRow";
 
 export const Route = createFileRoute("/lab/")({
   component: () => <RoleGuard allow={["lab", "admin"]}><LabHome /></RoleGuard>,
@@ -24,6 +23,7 @@ function LabHome() {
   const nav = useNavigate();
   const [samples, setSamples] = useState<any[]>([]);
   const [orders, setOrders] = useState<Record<string, any>>({});
+  const [products, setProducts] = useState<Record<string, any>>({});
   const [scan, setScan] = useState("");
 
   async function load() {
@@ -33,10 +33,15 @@ function LabHome() {
       .not("stage", "in", "(released,rejected)")
       .order("created_at", { ascending: false });
     setSamples(data ?? []);
-    const ids = Array.from(new Set((data ?? []).map((s) => s.order_id)));
-    if (ids.length) {
-      const { data: os } = await supabase.from("orders").select("*").in("id", ids);
+    const orderIds = Array.from(new Set((data ?? []).map((s) => s.order_id)));
+    if (orderIds.length) {
+      const { data: os } = await supabase.from("orders").select("*").in("id", orderIds);
       setOrders(Object.fromEntries((os ?? []).map((o) => [o.id, o])));
+    }
+    const productIds = Array.from(new Set((data ?? []).map((s) => s.product_id).filter(Boolean)));
+    if (productIds.length) {
+      const { data: ps } = await supabase.from("products").select("*").in("id", productIds);
+      setProducts(Object.fromEntries((ps ?? []).map((p) => [p.id, p])));
     }
   }
 
@@ -76,20 +81,23 @@ function LabHome() {
         </div>
       </Card>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {samples.length === 0 && <p className="text-muted-foreground">No active samples.</p>}
         {samples.map((s) => (
-          <Link key={s.id} to="/lab/samples/$sampleId" params={{ sampleId: s.id }}>
-            <Card className="flex items-center justify-between p-4 hover:border-primary">
-              <div>
-                <div className="font-medium">{s.sample_label}</div>
-                <div className="text-xs text-muted-foreground">
-                  Order {orders[s.order_id]?.order_number ?? s.order_id.slice(0, 8)} · QR {s.qr_code.slice(0, 10)}…
-                </div>
-              </div>
-              <Badge variant="secondary">{STAGE_LABEL[s.stage] ?? s.stage}</Badge>
-            </Card>
-          </Link>
+          <SampleListRow
+            key={s.id}
+            sample={{
+              id: s.id,
+              sample_label: s.sample_label,
+              stage: s.stage,
+              qr_code: s.qr_code,
+              order_id: s.order_id,
+              order_number: orders[s.order_id]?.order_number ?? null,
+              product_name: products[s.product_id]?.name ?? null,
+              batch_no: s.batch_no ?? null,
+              created_at: s.created_at,
+            }}
+          />
         ))}
       </div>
     </PortalShell>
