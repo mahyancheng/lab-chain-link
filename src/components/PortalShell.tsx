@@ -115,10 +115,14 @@ export function PortalShell({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <Button variant="ghost" size="sm" onClick={signOut} className="justify-start gap-2">
-            <LogOut className="h-4 w-4" />
-            <span className="group-data-[collapsible=icon]:hidden">Sign out</span>
-          </Button>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={signOut} tooltip="Sign out">
+                <LogOut className="h-4 w-4" />
+                <span>Sign out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
