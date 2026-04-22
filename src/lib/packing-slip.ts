@@ -17,7 +17,7 @@ export interface PackingSlipInput {
 }
 
 export async function generatePackingSlipPdf(input: PackingSlipInput): Promise<Blob> {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = new (await loadJsPdf())({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
 
   doc.setFillColor(34, 99, 60);
@@ -95,7 +95,7 @@ export interface ComplianceInput {
 }
 
 export async function generateCompliancePackPdf(input: ComplianceInput): Promise<Blob> {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = new (await loadJsPdf())({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
