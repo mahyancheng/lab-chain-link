@@ -79,7 +79,14 @@ function NewOrder() {
   }
 
   async function placeOrder() {
-    if (!user) return;
+    // Verify a live session exists — RLS requires auth.uid()
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authedUser = sessionData.session?.user;
+    if (!authedUser) {
+      toast.error("Please sign in again to place this order");
+      nav({ to: "/auth" });
+      return;
+    }
     if (samples.length === 0) return toast.error("Add at least one sample");
     if (!quote) return toast.error("Get a delivery quote first");
     setBusy(true);
@@ -88,7 +95,7 @@ function NewOrder() {
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .insert({
-          customer_id: user.id,
+          customer_id: authedUser.id,
           delivery_type: delivery,
           pickup_address: pickup,
           delivery_address: dropoff,
@@ -135,9 +142,9 @@ function NewOrder() {
       // 5. Stage -> paid + custody events
       await supabase.from("orders").update({ stage: "paid" }).eq("id", order.id);
       await supabase.from("chain_of_custody_events").insert([
-        { order_id: order.id, actor_id: user.id, event_type: "ordered", description: "Order placed" },
-        { order_id: order.id, actor_id: user.id, event_type: "paid", description: `Payment ${pay.paymentId}` },
-        { order_id: order.id, actor_id: user.id, event_type: "shipment_booked", description: `Lalamove ${booking.trackingId}` },
+        { order_id: order.id, actor_id: authedUser.id, event_type: "ordered", description: "Order placed" },
+        { order_id: order.id, actor_id: authedUser.id, event_type: "paid", description: `Payment ${pay.paymentId}` },
+        { order_id: order.id, actor_id: authedUser.id, event_type: "shipment_booked", description: `Lalamove ${booking.trackingId}` },
       ]);
 
       toast.success("Order placed!");
