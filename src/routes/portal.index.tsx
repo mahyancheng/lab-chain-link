@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { STAGE_LABEL } from "@/lib/stages";
 import { Plus } from "lucide-react";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/portal/")({
-  component: PortalHome,
+  component: () => <RoleGuard allow={["customer"]}><PortalHome /></RoleGuard>,
 });
 
 const NAV = [

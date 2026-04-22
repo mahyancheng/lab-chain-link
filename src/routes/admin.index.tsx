@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { STAGE_LABEL } from "@/lib/stages";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/admin/")({
-  component: AdminHome,
+  component: () => <RoleGuard allow={["admin"]}><AdminHome /></RoleGuard>,
 });
 
 const NAV = [

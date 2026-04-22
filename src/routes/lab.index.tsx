@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { STAGE_LABEL } from "@/lib/stages";
 import { toast } from "sonner";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/lab/")({
-  component: LabHome,
+  component: () => <RoleGuard allow={["lab", "admin"]}><LabHome /></RoleGuard>,
 });
 
 const NAV = [

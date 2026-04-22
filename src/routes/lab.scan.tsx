@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/lab/scan")({
-  component: ScanPage,
+  component: () => <RoleGuard allow={["lab", "admin"]}><ScanPage /></RoleGuard>,
 });
 
 const NAV = [

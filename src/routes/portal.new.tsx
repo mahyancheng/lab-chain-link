@@ -13,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { getLalamoveQuote, bookLalamove, processRazorpayPayment } from "@/lib/mock-services";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/portal/new")({
-  component: NewOrder,
+  component: () => <RoleGuard allow={["customer"]}><NewOrder /></RoleGuard>,
 });
 
 const NAV = [
