@@ -19,6 +19,8 @@ const LAB_SAMPLE_STAGES = [
   "data_validation",
   "qa_review",
   "ready_for_release",
+  "released",
+  "rejected",
 ];
 
 export const Route = createFileRoute("/lab/")({
@@ -67,7 +69,6 @@ function LabHome() {
     const { data } = await supabase
       .from("order_samples")
       .select("*")
-      .not("stage", "in", "(released,rejected)")
       .order("created_at", { ascending: false });
     setSamples(data ?? []);
     const orderIds = Array.from(new Set((data ?? []).map((s) => s.order_id)));
@@ -104,7 +105,7 @@ function LabHome() {
 
   return (
     <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">
-      <h1 className="mb-6 text-2xl font-bold"><SplitText>Active queue</SplitText></h1>
+      <h1 className="mb-6 text-2xl font-bold"><SplitText>Sample queue</SplitText></h1>
 
       <Card className="mb-6 p-4">
         <div className="flex gap-2">
