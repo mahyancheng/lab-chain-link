@@ -36,8 +36,14 @@ export function SampleCard(props: SampleCardProps) {
   const {
     label, stage, productName, itemCode, category,
     batchNo, origin, composition, packagingInstructions, tatDays,
-    qrDataUrl, sampleId, intake,
+    qrDataUrl, sampleId, intake, orderNumber, results,
   } = props;
+
+  const reportData = {
+    label, stage, sampleId, qrDataUrl,
+    productName, itemCode, category, batchNo, origin, composition,
+    packagingInstructions, tatDays, orderNumber, results,
+  };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [expanded, setExpanded] = useState(false);
