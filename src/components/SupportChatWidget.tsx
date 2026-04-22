@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { MessageSquare, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SupportChat } from "@/components/SupportChat";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 /**
- * Floating chat widget for the customer portal. Bottom-right bubble; expands
- * into a chat panel that adapts from a full-screen sheet on phones to a
- * fixed-size card on desktop.
+ * Floating customer support chat. Rendered in a React portal directly on
+ * document.body so no parent transform/overflow can clip it.
  */
 export function SupportChatWidget() {
   const { user, roles } = useAuth();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
-  // Hide for staff — they have their own per-customer chat in the admin view.
   const isStaff = roles.includes("admin") || roles.includes("lab");
 
-  // Realtime unread badge: count messages from staff while widget is closed.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!user || isStaff) return;
     const ch = supabase
@@ -49,57 +51,49 @@ export function SupportChatWidget() {
     if (open) setUnread(0);
   }, [open]);
 
-  if (!user || isStaff) return null;
+  if (!mounted || !user || isStaff) return null;
 
-  return (
-    <>
-      {/* Backdrop on small screens when open */}
+  const node = (
+    <div
+      style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 2147483000 }}
+    >
       {open && (
-        <button
-          aria-label="Close support chat"
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm sm:hidden"
-        />
+        <>
+          {/* Mobile backdrop */}
+          <button
+            type="button"
+            aria-label="Close support chat"
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-background/60 backdrop-blur-sm sm:hidden"
+            style={{ pointerEvents: "auto" }}
+          />
+          {/* Panel */}
+          <div
+            className={cn(
+              "absolute overflow-hidden rounded-xl border bg-card shadow-2xl",
+              "inset-x-2 bottom-24 top-16",
+              "sm:inset-auto sm:bottom-24 sm:right-4 sm:h-[600px] sm:w-[380px]",
+            )}
+            style={{ pointerEvents: "auto" }}
+          >
+            <div className="relative h-full w-full">
+              <SupportChat customerId={user.id} className="h-full border-0 shadow-none" />
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Panel */}
-      <div
-        className={cn(
-          "fixed z-50 transition-all duration-200 ease-out",
-          open
-            ? "pointer-events-auto opacity-100 translate-y-0"
-            : "pointer-events-none opacity-0 translate-y-4",
-          // Mobile: full-screen-ish sheet from bottom
-          "inset-x-2 bottom-2 top-16",
-          // Desktop: anchored card bottom-right
-          "sm:inset-auto sm:bottom-20 sm:right-4 sm:top-auto sm:h-[600px] sm:w-[380px]",
-        )}
-      >
-        <div className="relative h-full w-full">
-          <SupportChat customerId={user.id} className="h-full shadow-2xl" />
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={() => setOpen(false)}
-            className="absolute right-2 top-2 h-7 w-7 rounded-full"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Trigger bubble */}
+      {/* Bubble */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Open support chat"
+        aria-label={open ? "Close support chat" : "Open support chat"}
         className={cn(
-          "fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full",
-          "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
+          "absolute bottom-4 right-4 flex h-14 w-14 items-center justify-center rounded-full",
+          "bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-1 ring-primary/20",
           "transition-transform hover:scale-105 active:scale-95",
         )}
+        style={{ pointerEvents: "auto" }}
       >
         {open ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
         {!open && unread > 0 && (
@@ -108,6 +102,8 @@ export function SupportChatWidget() {
           </span>
         )}
       </button>
-    </>
+    </div>
   );
+
+  return createPortal(node, document.body);
 }
