@@ -29,7 +29,7 @@ const ADMIN_NAV = [
 const LAB_NAV = [
   { to: "/lab", label: "Queue" },
   { to: "/lab/scan", label: "Scan QR" },
-  { to: "/lab/customers", label: "Customers" },
+  { to: "/admin/customers", label: "Customers" },
 ];
 
 export const Route = createFileRoute("/admin/customers/")({

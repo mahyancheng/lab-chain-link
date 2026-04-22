@@ -19,7 +19,6 @@ import { Route as LabScanRouteImport } from './routes/lab.scan'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminConfigRouteImport } from './routes/admin.config'
-import { Route as LabCustomersIndexRouteImport } from './routes/lab.customers.index'
 import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
 import { Route as PortalSamplesSampleIdRouteImport } from './routes/portal.samples.$sampleId'
 import { Route as PortalOrdersOrderIdRouteImport } from './routes/portal.orders.$orderId'
@@ -76,11 +75,6 @@ const AdminConfigRoute = AdminConfigRouteImport.update({
   path: '/admin/config',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LabCustomersIndexRoute = LabCustomersIndexRouteImport.update({
-  id: '/lab/customers/',
-  path: '/lab/customers/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminCustomersIndexRoute = AdminCustomersIndexRouteImport.update({
   id: '/admin/customers/',
   path: '/admin/customers/',
@@ -124,7 +118,6 @@ export interface FileRoutesByFullPath {
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
   '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
-  '/lab/customers/': typeof LabCustomersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,7 +135,6 @@ export interface FileRoutesByTo {
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
   '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
-  '/lab/customers': typeof LabCustomersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,7 +153,6 @@ export interface FileRoutesById {
   '/portal/orders/$orderId': typeof PortalOrdersOrderIdRoute
   '/portal/samples/$sampleId': typeof PortalSamplesSampleIdRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
-  '/lab/customers/': typeof LabCustomersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,7 +172,6 @@ export interface FileRouteTypes {
     | '/portal/orders/$orderId'
     | '/portal/samples/$sampleId'
     | '/admin/customers/'
-    | '/lab/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,7 +189,6 @@ export interface FileRouteTypes {
     | '/portal/orders/$orderId'
     | '/portal/samples/$sampleId'
     | '/admin/customers'
-    | '/lab/customers'
   id:
     | '__root__'
     | '/'
@@ -217,7 +206,6 @@ export interface FileRouteTypes {
     | '/portal/orders/$orderId'
     | '/portal/samples/$sampleId'
     | '/admin/customers/'
-    | '/lab/customers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,7 +224,6 @@ export interface RootRouteChildren {
   PortalOrdersOrderIdRoute: typeof PortalOrdersOrderIdRoute
   PortalSamplesSampleIdRoute: typeof PortalSamplesSampleIdRoute
   AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
-  LabCustomersIndexRoute: typeof LabCustomersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -311,13 +298,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lab/customers/': {
-      id: '/lab/customers/'
-      path: '/lab/customers'
-      fullPath: '/lab/customers/'
-      preLoaderRoute: typeof LabCustomersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/customers/': {
       id: '/admin/customers/'
       path: '/admin/customers'
@@ -372,7 +352,6 @@ const rootRouteChildren: RootRouteChildren = {
   PortalOrdersOrderIdRoute: PortalOrdersOrderIdRoute,
   PortalSamplesSampleIdRoute: PortalSamplesSampleIdRoute,
   AdminCustomersIndexRoute: AdminCustomersIndexRoute,
-  LabCustomersIndexRoute: LabCustomersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
