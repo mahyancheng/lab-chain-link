@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { STAGE_LABEL } from "@/lib/stages";
+import { Textarea } from "@/components/ui/textarea";
+import { STAGE_LABEL, nextSampleStage, orderStageForSample } from "@/lib/stages";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Camera, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/lab/samples/$sampleId")({
@@ -22,22 +23,22 @@ const NAV = [
   { to: "/lab/scan", label: "Scan QR" },
 ];
 
-const NEXT_STAGE: Record<string, string> = {
-  pending: "received",
-  received: "in_testing",
-  in_testing: "qa_review",
-  qa_review: "ready_for_release",
-  ready_for_release: "released",
-};
-
 function SampleDetail() {
   const { sampleId } = Route.useParams();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isAdmin = roles.includes("admin");
   const [sample, setSample] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
   const [parameters, setParameters] = useState<any[]>([]);
   const [results, setResults] = useState<Record<string, { value: string; passed: boolean | null }>>({});
+  const [evidence, setEvidence] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+
+  // Intake form state
+  const [weight, setWeight] = useState("");
+  const [condition, setCondition] = useState("");
+  const [intakeNotes, setIntakeNotes] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
 
   async function load() {
     const { data: s } = await supabase.from("order_samples").select("*").eq("id", sampleId).single();
@@ -47,10 +48,7 @@ function SampleDetail() {
       setOrder(o);
       if (s.template_id) {
         const { data: p } = await supabase
-          .from("test_parameters")
-          .select("*")
-          .eq("template_id", s.template_id)
-          .order("sort_order");
+          .from("test_parameters").select("*").eq("template_id", s.template_id).order("sort_order");
         setParameters(p ?? []);
       }
       const { data: r } = await supabase.from("test_results").select("*").eq("sample_id", s.id);
@@ -59,20 +57,100 @@ function SampleDetail() {
         map[row.parameter_id] = { value: String(row.value ?? ""), passed: row.passed };
       });
       setResults(map);
+      const { data: ev } = await supabase
+        .from("attachments").select("*").eq("sample_id", s.id).eq("kind", "evidence");
+      setEvidence(ev ?? []);
+      setWeight(s.intake_weight_g ? String(s.intake_weight_g) : "");
+      setCondition(s.intake_condition ?? "");
+      setIntakeNotes(s.intake_notes ?? "");
     }
   }
 
-  useEffect(() => {
-    load();
-  }, [sampleId]);
+  useEffect(() => { load(); }, [sampleId]);
+
+  async function uploadEvidencePhoto(): Promise<string | null> {
+    if (!photo || !sample || !user) return null;
+    const path = `${sample.order_id}/${sample.id}/intake-${Date.now()}-${photo.name}`;
+    const { error } = await supabase.storage.from("evidence").upload(path, photo);
+    if (error) {
+      toast.error("Photo upload failed: " + error.message);
+      return null;
+    }
+    await supabase.from("attachments").insert({
+      kind: "evidence",
+      bucket: "evidence",
+      path,
+      filename: photo.name,
+      uploaded_by: user.id,
+      order_id: sample.order_id,
+      sample_id: sample.id,
+    });
+    return path;
+  }
+
+  async function performIntake(disposition: "accepted" | "on_hold" | "rejected") {
+    if (!sample || !user) return;
+    if (sample.stage !== "pending") return toast.error("Intake already completed");
+    if (!weight || !condition) return toast.error("Weight and condition required");
+    setBusy(true);
+    try {
+      await uploadEvidencePhoto();
+      const newStage =
+        disposition === "accepted" ? "received" : disposition === "rejected" ? "rejected" : "pending";
+      await supabase.from("order_samples").update({
+        stage: newStage,
+        intake_weight_g: parseFloat(weight) || null,
+        intake_condition: condition,
+        intake_notes: intakeNotes || null,
+        intake_disposition: disposition,
+        intake_by: user.id,
+        intake_at: new Date().toISOString(),
+      }).eq("id", sample.id);
+
+      await supabase.from("chain_of_custody_events").insert({
+        order_id: sample.order_id,
+        sample_id: sample.id,
+        actor_id: user.id,
+        event_type: "intake",
+        description: `Intake ${disposition} · ${weight}g · ${condition}`,
+        metadata: { weight_g: weight, condition, notes: intakeNotes, disposition },
+      });
+
+      if (disposition === "on_hold" || disposition === "rejected") {
+        await supabase.from("exceptions").insert({
+          order_id: sample.order_id,
+          sample_id: sample.id,
+          raised_by: user.id,
+          reason: `Intake ${disposition}: ${condition}${intakeNotes ? " — " + intakeNotes : ""}`,
+        });
+      }
+
+      if (disposition === "accepted") {
+        await supabase.from("orders").update({ stage: "received_at_lab" }).eq("id", sample.order_id);
+      }
+
+      toast.success(`Intake ${disposition}`);
+      setPhoto(null);
+      load();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function advance() {
     if (!sample || !user) return;
-    const next = NEXT_STAGE[sample.stage];
+    const next = nextSampleStage(sample.stage);
     if (!next) return;
-    if (next === "released" && sample.qa_verified_by === user.id) {
-      return toast.error("A different lab member must verify before release.");
+
+    // Step 5 spec: release is admin-controlled
+    if (next === "released" && !isAdmin) {
+      return toast.error("Only an Admin can release reports.");
     }
+    // QA verification: prevent same person from QA-verifying their own work
+    if (sample.stage === "qa_review" && sample.intake_by === user.id && !isAdmin) {
+      return toast.error("Separation of duties: another lab member must verify.");
+    }
+
     setBusy(true);
     const updates: any = { stage: next };
     if (next === "ready_for_release") {
@@ -88,16 +166,14 @@ function SampleDetail() {
       description: `${STAGE_LABEL[sample.stage]} → ${STAGE_LABEL[next]}`,
     });
 
-    // Mirror to order stage when meaningful
-    const orderStageMap: Record<string, "received_at_lab" | "in_testing" | "qa_review" | "released"> = {
-      received: "received_at_lab",
-      in_testing: "in_testing",
-      qa_review: "qa_review",
-      released: "released",
-    };
-    const mapped = orderStageMap[next];
+    const mapped = orderStageForSample(next);
     if (mapped) {
-      await supabase.from("orders").update({ stage: mapped }).eq("id", sample.order_id);
+      const orderUpdate: any = { stage: mapped };
+      if (next === "released") {
+        orderUpdate.released_by = user.id;
+        orderUpdate.released_at = new Date().toISOString();
+      }
+      await supabase.from("orders").update(orderUpdate).eq("id", sample.order_id);
     }
     setBusy(false);
     toast.success(`Stage → ${STAGE_LABEL[next]}`);
@@ -116,13 +192,7 @@ function SampleDetail() {
       passed = okMin && okMax;
     }
     await supabase.from("test_results").upsert(
-      {
-        sample_id: sampleId,
-        parameter_id: paramId,
-        value: isNaN(num) ? null : num,
-        passed,
-        entered_by: user.id,
-      },
+      { sample_id: sampleId, parameter_id: paramId, value: isNaN(num) ? null : num, passed, entered_by: user.id },
       { onConflict: "sample_id,parameter_id" } as any,
     );
     setResults((p) => ({ ...p, [paramId]: { ...r, passed } }));
@@ -130,6 +200,9 @@ function SampleDetail() {
   }
 
   if (!sample) return <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">Loading…</PortalShell>;
+
+  const next = nextSampleStage(sample.stage);
+  const showIntake = sample.stage === "pending";
 
   return (
     <PortalShell title="Lab Workspace" nav={NAV} requireRole="lab">
@@ -143,17 +216,84 @@ function SampleDetail() {
           <p className="text-sm text-muted-foreground">
             Order {order?.order_number} · QR <span className="font-mono">{sample.qr_code}</span>
           </p>
+          {(sample.batch_no || sample.origin || sample.composition) && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {sample.batch_no && <>Batch: <b>{sample.batch_no}</b> · </>}
+              {sample.origin && <>Origin: <b>{sample.origin}</b> · </>}
+              {sample.composition && <>Composition: <b>{sample.composition}</b></>}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Badge>{STAGE_LABEL[sample.stage]}</Badge>
-          {NEXT_STAGE[sample.stage] && (
+          {next && !showIntake && (
             <Button onClick={advance} disabled={busy}>
               {sample.stage === "qa_review" && <ShieldCheck className="mr-2 h-4 w-4" />}
-              Advance → {STAGE_LABEL[NEXT_STAGE[sample.stage]]}
+              Advance → {STAGE_LABEL[next]}
+              {next === "released" && !isAdmin && " (Admin only)"}
             </Button>
           )}
         </div>
       </div>
+
+      {showIntake && (
+        <Card className="mb-6 border-amber-500/40 bg-amber-500/5 p-5">
+          <h2 className="mb-3 flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4 text-amber-600" /> Lab intake — chain-of-custody
+          </h2>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Verify identity (QR scan), record weight & packaging condition, capture an evidence photo, and choose a disposition.
+            Required before testing can begin.
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <Label>Weight (grams) *</Label>
+              <Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="e.g. 250" />
+            </div>
+            <div>
+              <Label>Packaging condition *</Label>
+              <Input value={condition} onChange={(e) => setCondition(e.target.value)} placeholder="Sealed / leaking / damaged / tampered" />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Notes (optional)</Label>
+              <Textarea value={intakeNotes} onChange={(e) => setIntakeNotes(e.target.value)} rows={2} />
+            </div>
+            <div className="md:col-span-2">
+              <Label className="flex items-center gap-2"><Camera className="h-4 w-4" /> Evidence photo (recommended)</Label>
+              <Input type="file" accept="image/*" capture="environment" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button onClick={() => performIntake("accepted")} disabled={busy}>
+              <CheckCircle2 className="mr-2 h-4 w-4" />Accept
+            </Button>
+            <Button variant="outline" onClick={() => performIntake("on_hold")} disabled={busy}>
+              <AlertTriangle className="mr-2 h-4 w-4" />On hold
+            </Button>
+            <Button variant="destructive" onClick={() => performIntake("rejected")} disabled={busy}>
+              <XCircle className="mr-2 h-4 w-4" />Reject
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {sample.intake_at && (
+        <Card className="mb-6 p-4 text-sm">
+          <h3 className="mb-2 font-semibold">Intake record</h3>
+          <div className="grid grid-cols-2 gap-2 text-muted-foreground md:grid-cols-4">
+            <div>Disposition: <b className="text-foreground">{sample.intake_disposition}</b></div>
+            <div>Weight: <b className="text-foreground">{sample.intake_weight_g}g</b></div>
+            <div>Condition: <b className="text-foreground">{sample.intake_condition}</b></div>
+            <div>At: <b className="text-foreground">{new Date(sample.intake_at).toLocaleString()}</b></div>
+          </div>
+          {sample.intake_notes && <p className="mt-2 text-xs">{sample.intake_notes}</p>}
+          {evidence.length > 0 && (
+            <div className="mt-3 text-xs text-muted-foreground">
+              Evidence: {evidence.length} file(s) attached
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">Test results</h2>
@@ -175,12 +315,14 @@ function SampleDetail() {
                     className="col-span-3"
                     value={r.value}
                     onChange={(e) => setResults((s) => ({ ...s, [p.id]: { ...r, value: e.target.value } }))}
+                    disabled={sample.stage === "released" || sample.stage === "ready_for_release"}
                   />
                   <div className="col-span-2">
                     {r.passed === true && <Badge>Pass</Badge>}
                     {r.passed === false && <Badge variant="destructive">Fail</Badge>}
                   </div>
-                  <Button className="col-span-2" variant="outline" onClick={() => saveResult(p.id)}>
+                  <Button className="col-span-2" variant="outline" onClick={() => saveResult(p.id)}
+                    disabled={sample.stage === "released" || sample.stage === "ready_for_release"}>
                     Save
                   </Button>
                 </div>
