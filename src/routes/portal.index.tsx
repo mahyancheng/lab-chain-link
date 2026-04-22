@@ -76,6 +76,12 @@ function PortalHome() {
       </div>
 
       <h2 className="mb-3 text-lg font-semibold">Recent orders</h2>
+      <OrdersFilterBar
+        value={filters}
+        onChange={setFilters}
+        stages={[...ORDER_STAGES, "cancelled"]}
+        searchPlaceholder="Search by order #…"
+      />
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : orders.length === 0 ? (
@@ -85,9 +91,13 @@ function PortalHome() {
             <Button className="mt-4">Place your first order</Button>
           </Link>
         </Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-10 text-center">
+          <p className="text-muted-foreground">No orders match your filters.</p>
+        </Card>
       ) : (
         <div className="space-y-3">
-          {orders.slice(0, 10).map((o) => (
+          {filtered.slice(0, 50).map((o) => (
             <OrderListRow
               key={o.id}
               order={{
