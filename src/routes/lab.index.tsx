@@ -1,6 +1,6 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/RoleGuard";
 import { SampleListRow } from "@/components/SampleListRow";
+import { OrdersFilterBar, EMPTY_FILTERS, type OrdersFilterValue } from "@/components/OrdersFilterBar";
+
+const LAB_SAMPLE_STAGES = [
+  "pending",
+  "received",
+  "sample_prep",
+  "in_testing",
+  "data_validation",
+  "qa_review",
+  "ready_for_release",
+];
 
 export const Route = createFileRoute("/lab/")({
   component: () => <RoleGuard allow={["lab"]}><LabHome /></RoleGuard>,
