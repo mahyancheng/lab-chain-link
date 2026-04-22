@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

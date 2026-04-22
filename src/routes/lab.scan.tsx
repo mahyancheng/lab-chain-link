@@ -1,3 +1,4 @@
+import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { PortalShell } from "@/components/PortalShell";
