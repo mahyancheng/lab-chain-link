@@ -4,8 +4,10 @@ import type React from "react";
 import { useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { STAGE_LABEL } from "@/lib/stages";
-import { ChevronDown, FlaskConical, QrCode } from "lucide-react";
+import { ChevronDown, Download, Eye, FlaskConical, QrCode } from "lucide-react";
+import { downloadSampleReportPdf, openSampleReportPdf } from "@/lib/sample-report-pdf";
 
 interface SampleCardProps {
   label: string;
@@ -20,6 +22,13 @@ interface SampleCardProps {
   tatDays?: number | null;
   qrDataUrl?: string;
   sampleId: string;
+  orderNumber?: string | null;
+  results?: Array<{
+    name: string;
+    unit?: string | null;
+    value?: string | number | null;
+    passed?: boolean | null;
+  }>;
   intake?: { disposition?: string; weightG?: number | null; condition?: string | null; notes?: string | null } | null;
 }
 
@@ -27,8 +36,14 @@ export function SampleCard(props: SampleCardProps) {
   const {
     label, stage, productName, itemCode, category,
     batchNo, origin, composition, packagingInstructions, tatDays,
-    qrDataUrl, sampleId, intake,
+    qrDataUrl, sampleId, intake, orderNumber, results,
   } = props;
+
+  const reportData = {
+    label, stage, sampleId, qrDataUrl,
+    productName, itemCode, category, batchNo, origin, composition,
+    packagingInstructions, tatDays, orderNumber, results,
+  };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -68,7 +83,7 @@ export function SampleCard(props: SampleCardProps) {
 
       <div className="relative flex gap-4 p-5">
         {/* QR */}
-        <motion.div layout className="shrink-0">
+        <motion.div layout className="flex shrink-0 flex-col items-center gap-2">
           <div className="relative rounded-xl border border-border/60 bg-white p-2 shadow-sm">
             {qrDataUrl ? (
               <img
@@ -83,6 +98,28 @@ export function SampleCard(props: SampleCardProps) {
               <QrCode className="mr-1 inline h-3 w-3" />
               Scan
             </div>
+          </div>
+          <div className="flex w-full flex-col gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-8 w-full gap-1.5 text-xs"
+              onClick={() => openSampleReportPdf(reportData)}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View report
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 w-full gap-1.5 text-xs"
+              onClick={() => downloadSampleReportPdf(reportData)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download PDF
+            </Button>
           </div>
         </motion.div>
 
