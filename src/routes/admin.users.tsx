@@ -64,6 +64,40 @@ function AdminUsers() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newRoles, setNewRoles] = useState<Role[]>(["customer"]);
+
+  async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setCreating(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      await adminCreateUser({
+        data: {
+          email: String(fd.get("email") ?? ""),
+          password: String(fd.get("password") ?? ""),
+          full_name: String(fd.get("full_name") ?? ""),
+          company: String(fd.get("company") ?? ""),
+          phone: String(fd.get("phone") ?? ""),
+          roles: newRoles,
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Account created");
+      setCreateOpen(false);
+      setNewRoles(["customer"]);
+      await load();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create account");
+    } finally {
+      setCreating(false);
+    }
+  }
+
 
   async function load() {
     setLoading(true);
