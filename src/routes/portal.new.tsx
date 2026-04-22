@@ -168,9 +168,11 @@ function NewOrder() {
                   />
                   <Select value={s.product_id} onValueChange={(v) => updateSample(i, { product_id: v })}>
                     <SelectTrigger className="col-span-5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-80">
                       {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name} — ₹{p.base_price}</SelectItem>
+                        <SelectItem key={p.id} value={p.id}>
+                          [{p.category}] {p.name} — RM{p.base_price}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -216,7 +218,7 @@ function NewOrder() {
               <Button variant="outline" onClick={fetchQuote} disabled={busy}>Get Lalamove quote</Button>
               {quote && (
                 <div className="text-sm text-muted-foreground">
-                  Quote {quote.quoteId}: ₹{quote.amount} · ETA {quote.etaMinutes} min
+                  Quote {quote.quoteId}: RM{quote.amount} · ETA {quote.etaMinutes} min
                 </div>
               )}
             </div>
@@ -231,9 +233,9 @@ function NewOrder() {
         <Card className="h-fit p-5">
           <h2 className="mb-3 font-semibold">Summary</h2>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span>Samples</span><span>₹{subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Delivery</span><span>₹{(quote?.amount ?? 0).toFixed(2)}</span></div>
-            <div className="flex justify-between border-t pt-2 font-semibold"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span>Samples</span><span>RM{subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span>Delivery</span><span>RM{(quote?.amount ?? 0).toFixed(2)}</span></div>
+            <div className="flex justify-between border-t pt-2 font-semibold"><span>Total</span><span>RM{total.toFixed(2)}</span></div>
           </div>
           <Button className="mt-4 w-full" onClick={placeOrder} disabled={busy || samples.length === 0 || !quote}>
             Pay & place order
