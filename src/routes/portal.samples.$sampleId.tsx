@@ -74,13 +74,13 @@ function SampleReportPage() {
   }
 
   if (!sample) {
-    return <PortalShell title={shellTitle} nav={nav}>Loading…</PortalShell>;
+    return <PortalShell title={shellTitle} nav={nav} requireRole="customer">Loading…</PortalShell>;
   }
 
   const isReleased = sample.stage === "released";
 
   return (
-    <PortalShell title={shellTitle} nav={nav}>
+    <PortalShell title={shellTitle} nav={nav} requireRole="customer">
       <Link to={backTo as "/portal"} className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="mr-1 h-4 w-4" />
         <SplitText stagger={0.015}>Back</SplitText>

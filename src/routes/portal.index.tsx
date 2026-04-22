@@ -49,7 +49,7 @@ function PortalHome() {
     .reduce((sum, o) => sum + Number(o.total ?? 0), 0);
 
   return (
-    <PortalShell title="Customer Portal" nav={NAV}>
+    <PortalShell title="Customer Portal" nav={NAV} requireRole="customer">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight"><SplitText>Dashboard</SplitText></h1>
