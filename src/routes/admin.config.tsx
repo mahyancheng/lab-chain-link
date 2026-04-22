@@ -174,6 +174,39 @@ function Config() {
         </Button>
       </div>
 
+      <Card className="mb-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">QA approval policy</h2>
+            <p className="text-sm text-muted-foreground">
+              How many lab staff must approve a sample at QA review before it advances to
+              ready-for-release.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline">Currently: {requiredApprovals}</Badge>
+            <div className="inline-flex rounded-md border p-1">
+              <Button
+                size="sm"
+                variant={requiredApprovals === 1 ? "default" : "ghost"}
+                onClick={() => updateRequiredApprovals(1)}
+                disabled={savingApproval}
+              >
+                1 approver
+              </Button>
+              <Button
+                size="sm"
+                variant={requiredApprovals === 2 ? "default" : "ghost"}
+                onClick={() => updateRequiredApprovals(2)}
+                disabled={savingApproval}
+              >
+                2 approvers
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <Card className="mb-4 p-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
