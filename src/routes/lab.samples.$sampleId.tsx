@@ -375,6 +375,60 @@ function SampleDetail() {
           </div>
         )}
       </Card>
+
+      <Card className="mt-6 p-5">
+        <h2 className="mb-1 font-semibold">Test result files</h2>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Upload the official lab report (PDF) or an external certificate (CoA, MSDS, third-party report). Files are stored securely and visible to the customer once the report is released.
+        </p>
+        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_200px_auto] md:items-end">
+          <div>
+            <Label>File</Label>
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
+              onChange={(e) => setReportFile(e.target.files?.[0] ?? null)}
+              disabled={uploadingReport}
+            />
+          </div>
+          <div>
+            <Label>Type</Label>
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={reportKind}
+              onChange={(e) => setReportKind(e.target.value as "report" | "external_cert")}
+              disabled={uploadingReport}
+            >
+              <option value="report">Lab report</option>
+              <option value="external_cert">External certificate</option>
+            </select>
+          </div>
+          <Button onClick={uploadReport} disabled={!reportFile || uploadingReport}>
+            {uploadingReport ? "Uploading…" : "Upload"}
+          </Button>
+        </div>
+
+        {reports.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No files uploaded yet.</p>
+        ) : (
+          <div className="divide-y rounded-md border">
+            {reports.map((att) => (
+              <div key={att.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{att.filename ?? att.path.split("/").pop()}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {att.kind === "report" ? "Lab report" : "External certificate"} · {new Date(att.created_at).toLocaleString()}
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" variant="outline" onClick={() => downloadReport(att)}>Open</Button>
+                  <Button size="sm" variant="ghost" onClick={() => deleteReport(att)}>Delete</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </PortalShell>
   );
 }
