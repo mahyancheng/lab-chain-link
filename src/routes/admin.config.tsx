@@ -70,13 +70,36 @@ function Config() {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
+  const [requiredApprovals, setRequiredApprovals] = useState<1 | 2>(2);
+  const [savingApproval, setSavingApproval] = useState(false);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.from("products").select("*").order("name");
+    const [{ data, error }, settingsRes] = await Promise.all([
+      supabase.from("products").select("*").order("name"),
+      supabase.from("app_settings").select("qa_required_approvals").eq("id", true).maybeSingle(),
+    ]);
     if (error) toast.error(error.message);
     setProducts((data ?? []) as Product[]);
+    if (settingsRes.data?.qa_required_approvals) {
+      setRequiredApprovals(settingsRes.data.qa_required_approvals as 1 | 2);
+    }
     setLoading(false);
+  }
+
+  async function updateRequiredApprovals(next: 1 | 2) {
+    setSavingApproval(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ qa_required_approvals: next })
+      .eq("id", true);
+    setSavingApproval(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setRequiredApprovals(next);
+    toast.success(`QA now requires ${next} approval${next === 1 ? "" : "s"}`);
   }
 
   useEffect(() => {
