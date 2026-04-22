@@ -369,7 +369,12 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          item_code: string | null
           name: string
+          packaging_instructions: string | null
+          sample_liquid: string | null
+          sample_solid: string | null
+          tat_days: number | null
           updated_at: string
         }
         Insert: {
@@ -379,7 +384,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          item_code?: string | null
           name: string
+          packaging_instructions?: string | null
+          sample_liquid?: string | null
+          sample_solid?: string | null
+          tat_days?: number | null
           updated_at?: string
         }
         Update: {
@@ -389,7 +399,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          item_code?: string | null
           name?: string
+          packaging_instructions?: string | null
+          sample_liquid?: string | null
+          sample_solid?: string | null
+          tat_days?: number | null
           updated_at?: string
         }
         Relationships: []
