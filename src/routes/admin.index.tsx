@@ -30,6 +30,8 @@ function AdminHome() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [releaseQueue, setReleaseQueue] = useState<any[]>([]);
   const [exceptions, setExceptions] = useState<any[]>([]);
+  const [filters, setFilters] = useState<OrdersFilterValue>(EMPTY_FILTERS);
+  const filtered = useMemo(() => filterOrders(orders, filters), [orders, filters]);
 
   async function load() {
     const [ordersRes, rqRes, exRes] = await Promise.all([
