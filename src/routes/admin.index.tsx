@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { STAGE_LABEL } from "@/lib/stages";
 import { RoleGuard } from "@/components/RoleGuard";
+import { OrderListRow } from "@/components/OrderListRow";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -160,20 +161,17 @@ function AdminHome() {
         <h2 className="mb-3 font-semibold">Recent orders</h2>
         <div className="space-y-2">
           {orders.map((o) => (
-            <Link key={o.id} to="/portal/orders/$orderId" params={{ orderId: o.id }}>
-              <div className="flex items-center justify-between rounded-md border p-3 text-sm hover:border-primary">
-                <div>
-                  <div className="font-medium">{o.order_number}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(o.created_at).toLocaleString()} · {o.delivery_type.replace("_", " ")}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span>RM{Number(o.total).toFixed(2)}</span>
-                  <Badge variant="secondary">{STAGE_LABEL[o.stage] ?? o.stage}</Badge>
-                </div>
-              </div>
-            </Link>
+            <OrderListRow
+              key={o.id}
+              order={{
+                id: o.id,
+                order_number: o.order_number,
+                stage: o.stage,
+                total: Number(o.total ?? 0),
+                delivery_type: o.delivery_type,
+                created_at: o.created_at,
+              }}
+            />
           ))}
         </div>
       </Card>

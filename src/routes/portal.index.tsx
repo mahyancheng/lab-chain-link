@@ -6,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { STAGE_LABEL } from "@/lib/stages";
+import { OrderListRow } from "@/components/OrderListRow";
 import { Plus } from "lucide-react";
 import { RoleGuard } from "@/components/RoleGuard";
 
@@ -85,20 +84,17 @@ function PortalHome() {
       ) : (
         <div className="space-y-3">
           {orders.slice(0, 10).map((o) => (
-            <Link key={o.id} to="/portal/orders/$orderId" params={{ orderId: o.id }}>
-              <Card className="flex items-center justify-between p-4 transition hover:border-primary">
-                <div>
-                  <div className="font-semibold">{o.order_number}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(o.created_at).toLocaleString()} · {o.delivery_type.replace("_", " ")}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">RM{Number(o.total).toFixed(2)}</span>
-                  <Badge variant="secondary">{STAGE_LABEL[o.stage] ?? o.stage}</Badge>
-                </div>
-              </Card>
-            </Link>
+            <OrderListRow
+              key={o.id}
+              order={{
+                id: o.id,
+                order_number: o.order_number,
+                stage: o.stage,
+                total: Number(o.total ?? 0),
+                delivery_type: o.delivery_type,
+                created_at: o.created_at,
+              }}
+            />
           ))}
         </div>
       )}
