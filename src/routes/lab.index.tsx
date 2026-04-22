@@ -30,6 +30,7 @@ export const Route = createFileRoute("/lab/")({
 const NAV = [
   { to: "/lab", label: "Queue" },
   { to: "/lab/scan", label: "Scan QR" },
+  { to: "/admin/customers", label: "Customers" },
 ];
 
 function LabHome() {
