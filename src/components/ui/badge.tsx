@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { SplitText } from "@/components/ui/split-text";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
@@ -25,8 +26,11 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+function Badge({ className, variant, children, ...props }: BadgeProps) {
+  const content = typeof children === "string"
+    ? <SplitText stagger={0.015}>{children}</SplitText>
+    : children;
+  return <div className={cn(badgeVariants({ variant }), className)} {...props}>{content}</div>;
 }
 
 export { Badge, badgeVariants };

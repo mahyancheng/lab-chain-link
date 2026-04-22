@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { SplitText } from "@/components/ui/split-text";
 import { FlaskConical, LogOut } from "lucide-react";
 
 export function PortalShell({
@@ -39,7 +40,7 @@ export function PortalShell({
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <Link to="/" className="flex items-center gap-2 font-semibold text-primary hover-scale">
             <FlaskConical className="h-5 w-5" />
-            CD Agrovet
+            <SplitText stagger={0.02}>CD Agrovet</SplitText>
           </Link>
           <nav className="flex items-center gap-1">
             {nav.map((n) => (
@@ -49,12 +50,12 @@ export function PortalShell({
                 className="pill-nav"
                 activeProps={{ className: "pill-nav-active" }}
               >
-                {n.label}
+                <SplitText stagger={0.015}>{n.label}</SplitText>
               </Link>
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{title}</span>
+            <span className="text-xs text-muted-foreground"><SplitText stagger={0.015}>{title}</SplitText></span>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4" />
             </Button>

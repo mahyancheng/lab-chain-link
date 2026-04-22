@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SplitText } from "@/components/ui/split-text";
 import { toast } from "sonner";
 import { FlaskConical } from "lucide-react";
 
@@ -62,7 +63,11 @@ function AuthPage() {
       <Card className="w-full max-w-md p-6">
         <div className="mb-4 flex items-center gap-2 text-primary">
           <FlaskConical className="h-5 w-5" />
-          <span className="font-semibold">CD Agrovet</span>
+          <span className="font-semibold"><SplitText stagger={0.02}>CD Agrovet</SplitText></span>
+        </div>
+        <div className="mb-4 space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight"><SplitText>Account access</SplitText></h1>
+          <p className="text-sm text-muted-foreground"><SplitText stagger={0.012}>Sign in to track orders, view reports, and manage lab activity.</SplitText></p>
         </div>
         <Tabs defaultValue="signin">
           <TabsList className="grid w-full grid-cols-2">
