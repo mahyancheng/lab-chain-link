@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useAuth, homeRouteFor } from "@/hooks/useAuth";
+
 import {
   FlaskConical,
   QrCode,
@@ -78,8 +78,6 @@ const STATS = [
 ];
 
 function Landing() {
-  const { user, roles } = useAuth();
-  const dest = user ? homeRouteFor(roles) : "/auth";
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,11 +100,6 @@ function Landing() {
             <span className="hidden text-xs text-muted-foreground sm:inline">
               Lab Workspace
             </span>
-            <Link to={dest as "/portal"}>
-              <Button variant="ghost" size="sm">
-                {user ? "Dashboard" : "Sign in"}
-              </Button>
-            </Link>
             <Link to="/auth">
               <Button size="sm">Get started</Button>
             </Link>
@@ -131,11 +124,6 @@ function Landing() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/auth">
               <Button size="lg">Place an order</Button>
-            </Link>
-            <Link to={dest as "/portal"}>
-              <Button size="lg" variant="outline">
-                {user ? "Open portal" : "Sign in"}
-              </Button>
             </Link>
           </div>
         </section>
