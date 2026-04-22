@@ -88,14 +88,15 @@ function SampleDetail() {
     });
 
     // Mirror to order stage when meaningful
-    const orderStageMap: Record<string, string> = {
+    const orderStageMap: Record<string, "received_at_lab" | "in_testing" | "qa_review" | "released"> = {
       received: "received_at_lab",
       in_testing: "in_testing",
       qa_review: "qa_review",
       released: "released",
     };
-    if (orderStageMap[next]) {
-      await supabase.from("orders").update({ stage: orderStageMap[next] }).eq("id", sample.order_id);
+    const mapped = orderStageMap[next];
+    if (mapped) {
+      await supabase.from("orders").update({ stage: mapped }).eq("id", sample.order_id);
     }
     setBusy(false);
     toast.success(`Stage → ${STAGE_LABEL[next]}`);

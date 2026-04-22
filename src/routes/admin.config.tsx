@@ -39,8 +39,9 @@ function Config() {
   async function addRule(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const dt = (fd.get("delivery_type") as string) || "";
     const { error } = await supabase.from("capacity_rules").insert({
-      delivery_type: (fd.get("delivery_type") as string) || null,
+      delivery_type: dt === "same_day" || dt === "standard" ? dt : null,
       daily_cap: fd.get("daily_cap") ? Number(fd.get("daily_cap")) : null,
       same_day_cutoff_time: (fd.get("cutoff") as string) || null,
     });
