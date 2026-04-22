@@ -83,7 +83,7 @@ export function SampleCard(props: SampleCardProps) {
 
       <div className="relative flex gap-4 p-5">
         {/* QR */}
-        <motion.div layout className="shrink-0">
+        <motion.div layout className="flex shrink-0 flex-col items-center gap-2">
           <div className="relative rounded-xl border border-border/60 bg-white p-2 shadow-sm">
             {qrDataUrl ? (
               <img
@@ -98,6 +98,28 @@ export function SampleCard(props: SampleCardProps) {
               <QrCode className="mr-1 inline h-3 w-3" />
               Scan
             </div>
+          </div>
+          <div className="flex w-full flex-col gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-8 w-full gap-1.5 text-xs"
+              onClick={() => openSampleReportPdf(reportData)}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View report
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 w-full gap-1.5 text-xs"
+              onClick={() => downloadSampleReportPdf(reportData)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download PDF
+            </Button>
           </div>
         </motion.div>
 
