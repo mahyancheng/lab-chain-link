@@ -1,6 +1,6 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Save, Bookmark } from "lucide-react";
+import { Trash2, Plus, Save, Bookmark, MapPin, Bike, Car, Truck, Loader2, Search, Route as RouteIcon, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { getLalamoveQuote, bookLalamove, processRazorpayPayment, type LalamoveQuote } from "@/lib/mock-services";
+import { bookLalamove, processRazorpayPayment, getMultiServiceQuotes, type LalamoveQuote } from "@/lib/mock-services";
 import { RoleGuard } from "@/components/RoleGuard";
+import { forwardGeocode, reverseGeocode, getOsrmRoute } from "@/lib/geo";
+import { cn } from "@/lib/utils";
+
+const DeliveryMap = lazy(() => import("@/components/delivery/DeliveryMap"));
+type LatLng = { lat: number; lng: number };
 
 export const Route = createFileRoute("/portal/new")({
   component: () => <RoleGuard allow={["customer"]}><NewOrder /></RoleGuard>,
@@ -44,12 +47,25 @@ function NewOrder() {
   const [panels, setPanels] = useState<any[]>([]);
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("CD Agrovet Lab, Klang");
-  const [delivery, setDelivery] = useState<"same_day" | "standard">("standard");
+  const [pickupCoord, setPickupCoord] = useState<LatLng | null>(null);
+  const [dropoffCoord, setDropoffCoord] = useState<LatLng | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<[number, number][] | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [durationMin, setDurationMin] = useState<number | null>(null);
+  const [mapMode, setMapMode] = useState<"pickup" | "dropoff">("pickup");
+  const [quotes, setQuotes] = useState<LalamoveQuote[]>([]);
+  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
+  const [quotingBusy, setQuotingBusy] = useState(false);
+  const [routeBusy, setRouteBusy] = useState(false);
   const [notes, setNotes] = useState("");
   const [samples, setSamples] = useState<SampleRow[]>([]);
-  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
   const [busy, setBusy] = useState(false);
   const [panelName, setPanelName] = useState("");
+
+  // Seed default drop-off coordinate (CD Agrovet Lab, Klang ≈ 3.0319, 101.4450)
+  useEffect(() => {
+    if (!dropoffCoord) setDropoffCoord({ lat: 3.0319, lng: 101.4450 });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.from("products").select("*").eq("active", true).then(({ data }) => setProducts(data ?? []));
