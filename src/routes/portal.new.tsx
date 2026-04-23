@@ -76,9 +76,8 @@ function NewOrder() {
     }
   }, [user]);
 
-  // Same-day cutoff guard
+  // Same-day cutoff guard (Motorcycle quotes are blocked after cutoff)
   const sameDayBlocked = (() => {
-    if (delivery !== "same_day") return false;
     const now = new Date();
     return now.getHours() >= SAME_DAY_CUTOFF_HOUR;
   })();
