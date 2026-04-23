@@ -164,6 +164,9 @@ function NewOrder() {
           delivery_fee: quote.amount,
           total,
           stage: "ordered",
+          lalamove_quotation_id: quote.quoteId,
+          lalamove_sender_stop_id: quote.senderStopId,
+          lalamove_recipient_stop_id: quote.recipientStopId,
         })
         .select()
         .single();
@@ -181,20 +184,24 @@ function NewOrder() {
       const { error: sErr } = await supabase.from("order_samples").insert(sampleRows);
       if (sErr) throw sErr;
 
-      const pay = await processRazorpayPayment(total);
+      const pay = await processRazorpayPayment(total, order.id);
       await supabase.from("payments").insert({
         order_id: order.id,
         amount: total,
         status: pay.status,
         provider_ref: pay.paymentId,
+        razorpay_order_id: pay.razorpayOrderId,
+        razorpay_signature: pay.signature,
         paid_at: new Date().toISOString(),
       });
 
-      const booking = await bookLalamove(quote.quoteId);
+      const booking = await bookLalamove(quote);
       await supabase.from("shipments").insert({
         order_id: order.id,
         tracking_id: booking.trackingId,
         quote_amount: quote.amount,
+        lalamove_quotation_id: quote.quoteId,
+        service_type: quote.serviceType,
         eta: new Date(Date.now() + quote.etaMinutes * 60_000).toISOString(),
         status: "scheduled",
       });
