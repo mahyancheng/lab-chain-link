@@ -16,6 +16,7 @@ export interface LalamoveQuoteInput {
   pickupLng?: number;
   dropoffLat?: number;
   dropoffLng?: number;
+  distanceKm?: number;
 }
 
 export interface LalamoveQuoteResult {
@@ -36,18 +37,21 @@ export const getLalamoveQuoteFn = createServerFn({ method: "POST" })
       pickup: String(input.pickup),
       dropoff: String(input.dropoff),
       serviceType: (input.serviceType ?? "MOTORCYCLE") as "MOTORCYCLE" | "CAR" | "VAN",
+      distanceKm: typeof input.distanceKm === "number" ? input.distanceKm : 5,
     };
   })
   .handler(async ({ data }): Promise<LalamoveQuoteResult> => {
-    // MOCK: matches Lalamove /v3/quotations response shape
-    const basePrice = data.serviceType === "VAN" ? 45 : data.serviceType === "CAR" ? 28 : 15;
-    const variance = Math.floor(Math.random() * 15);
-    const eta = data.serviceType === "VAN" ? 75 : data.serviceType === "CAR" ? 55 : 40;
+    // MOCK: matches Lalamove /v3/quotations response shape. Distance-aware pricing.
+    const perKm = data.serviceType === "VAN" ? 2.5 : data.serviceType === "CAR" ? 1.8 : 1.2;
+    const flag = data.serviceType === "VAN" ? 12 : data.serviceType === "CAR" ? 8 : 5;
+    const speedKmh = data.serviceType === "VAN" ? 35 : data.serviceType === "CAR" ? 40 : 45;
+    const price = Math.max(8, Math.round((flag + perKm * data.distanceKm) * 100) / 100);
+    const eta = Math.max(15, Math.round((data.distanceKm / speedKmh) * 60) + 10);
     const id = crypto.randomUUID().replace(/-/g, "");
     return {
       quotationId: "LMQ-" + id.slice(0, 12).toUpperCase(),
       serviceType: data.serviceType,
-      priceTotal: basePrice + variance,
+      priceTotal: price,
       currency: "MYR",
       expiresAt: new Date(Date.now() + 5 * 60_000).toISOString(),
       senderStopId: "stop_" + id.slice(0, 8),
