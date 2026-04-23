@@ -507,3 +507,32 @@ function NewOrder() {
     </PortalShell>
   );
 }
+
+function AddressSearchInput({ label, value, onChange, onSearch, placeholder, hasMarker }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSearch: () => void;
+  placeholder?: string;
+  hasMarker: boolean;
+}) {
+  return (
+    <div>
+      <Label className="flex items-center gap-1.5 text-xs">
+        <MapPin className={cn("h-3 w-3", hasMarker ? "text-primary" : "text-muted-foreground")} />
+        {label}
+      </Label>
+      <div className="mt-1 flex gap-1.5">
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSearch(); } }}
+          placeholder={placeholder}
+        />
+        <Button type="button" variant="outline" size="icon" onClick={onSearch} title="Search & place pin">
+          <Search className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
