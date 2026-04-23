@@ -47,7 +47,7 @@ function NewOrder() {
   const [delivery, setDelivery] = useState<"same_day" | "standard">("standard");
   const [notes, setNotes] = useState("");
   const [samples, setSamples] = useState<SampleRow[]>([]);
-  const [quote, setQuote] = useState<{ amount: number; etaMinutes: number; quoteId: string } | null>(null);
+  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
   const [busy, setBusy] = useState(false);
   const [panelName, setPanelName] = useState("");
 
