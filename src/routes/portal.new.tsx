@@ -145,14 +145,77 @@ function NewOrder() {
   }, 0);
   const total = subtotal + (quote?.amount ?? 0);
 
-  async function fetchQuote() {
-    if (!pickup) return toast.error("Pickup address required");
-    if (sameDayBlocked) return toast.error(`Same-day cutoff is ${SAME_DAY_CUTOFF_HOUR}:00. Choose Standard.`);
-    setBusy(true);
-    const q = await getLalamoveQuote({ pickup, dropoff, deliveryType: delivery });
-    setQuote(q);
-    setBusy(false);
-    toast.success(`Quote: RM${q.amount} · ETA ${q.etaMinutes}m`);
+  // Auto-fetch OSRM route whenever both coords set
+  const routeReqRef = useRef(0);
+  useEffect(() => {
+    if (!pickupCoord || !dropoffCoord) {
+      setRouteGeometry(null);
+      setDistanceKm(null);
+      setDurationMin(null);
+      setQuotes([]);
+      setQuote(null);
+      return;
+    }
+    const reqId = ++routeReqRef.current;
+    setRouteBusy(true);
+    getOsrmRoute(pickupCoord, dropoffCoord)
+      .then((r) => {
+        if (reqId !== routeReqRef.current) return;
+        if (!r) {
+          setRouteGeometry(null);
+          setDistanceKm(null);
+          setDurationMin(null);
+          return;
+        }
+        setRouteGeometry(r.geometry);
+        setDistanceKm(r.distanceMeters / 1000);
+        setDurationMin(Math.round(r.durationSeconds / 60));
+      })
+      .finally(() => { if (reqId === routeReqRef.current) setRouteBusy(false); });
+  }, [pickupCoord, dropoffCoord]);
+
+  // Auto-fetch multi-service quotes when distance is known
+  const quoteReqRef = useRef(0);
+  useEffect(() => {
+    if (distanceKm == null || !pickup || !dropoff) {
+      setQuotes([]);
+      setQuote(null);
+      return;
+    }
+    const reqId = ++quoteReqRef.current;
+    setQuotingBusy(true);
+    getMultiServiceQuotes({ pickup, dropoff, distanceKm })
+      .then((qs) => {
+        if (reqId !== quoteReqRef.current) return;
+        setQuotes(qs);
+        setQuote((prev) => {
+          // Keep selected service if still present, else default to first
+          const stillThere = prev ? qs.find((q) => q.serviceType === prev.serviceType) : null;
+          return stillThere ?? qs[0] ?? null;
+        });
+      })
+      .catch((e) => toast.error(e?.message ?? "Quote failed"))
+      .finally(() => { if (reqId === quoteReqRef.current) setQuotingBusy(false); });
+  }, [distanceKm, pickup, dropoff]);
+
+  async function geocodeAndSet(target: "pickup" | "dropoff", q: string) {
+    const r = await forwardGeocode(q);
+    if (!r) return toast.error("Address not found");
+    if (target === "pickup") {
+      setPickup(r.displayName);
+      setPickupCoord({ lat: r.lat, lng: r.lng });
+    } else {
+      setDropoff(r.displayName);
+      setDropoffCoord({ lat: r.lat, lng: r.lng });
+    }
+  }
+
+  async function handleMapPick(target: "pickup" | "dropoff", coord: LatLng) {
+    if (target === "pickup") setPickupCoord(coord); else setDropoffCoord(coord);
+    const addr = await reverseGeocode(coord.lat, coord.lng);
+    if (addr) {
+      if (target === "pickup") setPickup(addr); else setDropoff(addr);
+    }
   }
 
   async function placeOrder() {
