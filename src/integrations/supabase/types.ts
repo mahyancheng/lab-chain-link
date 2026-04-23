@@ -357,13 +357,22 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string
+          customer_name: string | null
+          customer_phone: string | null
           delivery_address: string | null
           delivery_fee: number
+          delivery_lat: string | null
+          delivery_lng: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           id: string
+          lalamove_quotation_id: string | null
+          lalamove_recipient_stop_id: string | null
+          lalamove_sender_stop_id: string | null
           notes: string | null
           order_number: string
           pickup_address: string | null
+          pickup_lat: string | null
+          pickup_lng: string | null
           qr_code: string
           released_at: string | null
           released_by: string | null
@@ -375,13 +384,22 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_id: string
+          customer_name?: string | null
+          customer_phone?: string | null
           delivery_address?: string | null
           delivery_fee?: number
+          delivery_lat?: string | null
+          delivery_lng?: string | null
           delivery_type?: Database["public"]["Enums"]["delivery_type"]
           id?: string
+          lalamove_quotation_id?: string | null
+          lalamove_recipient_stop_id?: string | null
+          lalamove_sender_stop_id?: string | null
           notes?: string | null
           order_number?: string
           pickup_address?: string | null
+          pickup_lat?: string | null
+          pickup_lng?: string | null
           qr_code?: string
           released_at?: string | null
           released_by?: string | null
@@ -393,13 +411,22 @@ export type Database = {
         Update: {
           created_at?: string
           customer_id?: string
+          customer_name?: string | null
+          customer_phone?: string | null
           delivery_address?: string | null
           delivery_fee?: number
+          delivery_lat?: string | null
+          delivery_lng?: string | null
           delivery_type?: Database["public"]["Enums"]["delivery_type"]
           id?: string
+          lalamove_quotation_id?: string | null
+          lalamove_recipient_stop_id?: string | null
+          lalamove_sender_stop_id?: string | null
           notes?: string | null
           order_number?: string
           pickup_address?: string | null
+          pickup_lat?: string | null
+          pickup_lng?: string | null
           qr_code?: string
           released_at?: string | null
           released_by?: string | null
@@ -419,6 +446,8 @@ export type Database = {
           paid_at: string | null
           provider: string
           provider_ref: string | null
+          razorpay_order_id: string | null
+          razorpay_signature: string | null
           status: Database["public"]["Enums"]["payment_status"]
         }
         Insert: {
@@ -429,6 +458,8 @@ export type Database = {
           paid_at?: string | null
           provider?: string
           provider_ref?: string | null
+          razorpay_order_id?: string | null
+          razorpay_signature?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
         }
         Update: {
@@ -439,6 +470,8 @@ export type Database = {
           paid_at?: string | null
           provider?: string
           provider_ref?: string | null
+          razorpay_order_id?: string | null
+          razorpay_signature?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
         }
         Relationships: [
@@ -590,9 +623,11 @@ export type Database = {
           created_at: string
           eta: string | null
           id: string
+          lalamove_quotation_id: string | null
           order_id: string
           provider: string
           quote_amount: number | null
+          service_type: string | null
           status: string
           tracking_id: string | null
           updated_at: string
@@ -601,9 +636,11 @@ export type Database = {
           created_at?: string
           eta?: string | null
           id?: string
+          lalamove_quotation_id?: string | null
           order_id: string
           provider?: string
           quote_amount?: number | null
+          service_type?: string | null
           status?: string
           tracking_id?: string | null
           updated_at?: string
@@ -612,9 +649,11 @@ export type Database = {
           created_at?: string
           eta?: string | null
           id?: string
+          lalamove_quotation_id?: string | null
           order_id?: string
           provider?: string
           quote_amount?: number | null
+          service_type?: string | null
           status?: string
           tracking_id?: string | null
           updated_at?: string
