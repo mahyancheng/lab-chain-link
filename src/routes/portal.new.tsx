@@ -1,6 +1,6 @@
 import { SplitText } from "@/components/ui/split-text";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { PortalShell } from "@/components/PortalShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,12 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Save, Bookmark } from "lucide-react";
+import { Trash2, Plus, Save, Bookmark, MapPin, Bike, Car, Truck, Loader2, Search, Route as RouteIcon, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { getLalamoveQuote, bookLalamove, processRazorpayPayment, type LalamoveQuote } from "@/lib/mock-services";
+import { bookLalamove, processRazorpayPayment, getMultiServiceQuotes, type LalamoveQuote } from "@/lib/mock-services";
 import { RoleGuard } from "@/components/RoleGuard";
+import { forwardGeocode, reverseGeocode, getOsrmRoute } from "@/lib/geo";
+import { cn } from "@/lib/utils";
+
+const DeliveryMap = lazy(() => import("@/components/delivery/DeliveryMap"));
+type LatLng = { lat: number; lng: number };
 
 export const Route = createFileRoute("/portal/new")({
   component: () => <RoleGuard allow={["customer"]}><NewOrder /></RoleGuard>,
@@ -44,12 +48,25 @@ function NewOrder() {
   const [panels, setPanels] = useState<any[]>([]);
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("CD Agrovet Lab, Klang");
-  const [delivery, setDelivery] = useState<"same_day" | "standard">("standard");
+  const [pickupCoord, setPickupCoord] = useState<LatLng | null>(null);
+  const [dropoffCoord, setDropoffCoord] = useState<LatLng | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<[number, number][] | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [durationMin, setDurationMin] = useState<number | null>(null);
+  const [mapMode, setMapMode] = useState<"pickup" | "dropoff">("pickup");
+  const [quotes, setQuotes] = useState<LalamoveQuote[]>([]);
+  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
+  const [quotingBusy, setQuotingBusy] = useState(false);
+  const [routeBusy, setRouteBusy] = useState(false);
   const [notes, setNotes] = useState("");
   const [samples, setSamples] = useState<SampleRow[]>([]);
-  const [quote, setQuote] = useState<LalamoveQuote | null>(null);
   const [busy, setBusy] = useState(false);
   const [panelName, setPanelName] = useState("");
+
+  // Seed default drop-off coordinate (CD Agrovet Lab, Klang ≈ 3.0319, 101.4450)
+  useEffect(() => {
+    if (!dropoffCoord) setDropoffCoord({ lat: 3.0319, lng: 101.4450 });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.from("products").select("*").eq("active", true).then(({ data }) => setProducts(data ?? []));
@@ -59,9 +76,8 @@ function NewOrder() {
     }
   }, [user]);
 
-  // Same-day cutoff guard
+  // Same-day cutoff guard (Motorcycle quotes are blocked after cutoff)
   const sameDayBlocked = (() => {
-    if (delivery !== "same_day") return false;
     const now = new Date();
     return now.getHours() >= SAME_DAY_CUTOFF_HOUR;
   })();
@@ -129,14 +145,77 @@ function NewOrder() {
   }, 0);
   const total = subtotal + (quote?.amount ?? 0);
 
-  async function fetchQuote() {
-    if (!pickup) return toast.error("Pickup address required");
-    if (sameDayBlocked) return toast.error(`Same-day cutoff is ${SAME_DAY_CUTOFF_HOUR}:00. Choose Standard.`);
-    setBusy(true);
-    const q = await getLalamoveQuote({ pickup, dropoff, deliveryType: delivery });
-    setQuote(q);
-    setBusy(false);
-    toast.success(`Quote: RM${q.amount} · ETA ${q.etaMinutes}m`);
+  // Auto-fetch OSRM route whenever both coords set
+  const routeReqRef = useRef(0);
+  useEffect(() => {
+    if (!pickupCoord || !dropoffCoord) {
+      setRouteGeometry(null);
+      setDistanceKm(null);
+      setDurationMin(null);
+      setQuotes([]);
+      setQuote(null);
+      return;
+    }
+    const reqId = ++routeReqRef.current;
+    setRouteBusy(true);
+    getOsrmRoute(pickupCoord, dropoffCoord)
+      .then((r) => {
+        if (reqId !== routeReqRef.current) return;
+        if (!r) {
+          setRouteGeometry(null);
+          setDistanceKm(null);
+          setDurationMin(null);
+          return;
+        }
+        setRouteGeometry(r.geometry);
+        setDistanceKm(r.distanceMeters / 1000);
+        setDurationMin(Math.round(r.durationSeconds / 60));
+      })
+      .finally(() => { if (reqId === routeReqRef.current) setRouteBusy(false); });
+  }, [pickupCoord, dropoffCoord]);
+
+  // Auto-fetch multi-service quotes when distance is known
+  const quoteReqRef = useRef(0);
+  useEffect(() => {
+    if (distanceKm == null || !pickup || !dropoff) {
+      setQuotes([]);
+      setQuote(null);
+      return;
+    }
+    const reqId = ++quoteReqRef.current;
+    setQuotingBusy(true);
+    getMultiServiceQuotes({ pickup, dropoff, distanceKm })
+      .then((qs) => {
+        if (reqId !== quoteReqRef.current) return;
+        setQuotes(qs);
+        setQuote((prev) => {
+          // Keep selected service if still present, else default to first
+          const stillThere = prev ? qs.find((q) => q.serviceType === prev.serviceType) : null;
+          return stillThere ?? qs[0] ?? null;
+        });
+      })
+      .catch((e) => toast.error(e?.message ?? "Quote failed"))
+      .finally(() => { if (reqId === quoteReqRef.current) setQuotingBusy(false); });
+  }, [distanceKm, pickup, dropoff]);
+
+  async function geocodeAndSet(target: "pickup" | "dropoff", q: string) {
+    const r = await forwardGeocode(q);
+    if (!r) return toast.error("Address not found");
+    if (target === "pickup") {
+      setPickup(r.displayName);
+      setPickupCoord({ lat: r.lat, lng: r.lng });
+    } else {
+      setDropoff(r.displayName);
+      setDropoffCoord({ lat: r.lat, lng: r.lng });
+    }
+  }
+
+  async function handleMapPick(target: "pickup" | "dropoff", coord: LatLng) {
+    if (target === "pickup") setPickupCoord(coord); else setDropoffCoord(coord);
+    const addr = await reverseGeocode(coord.lat, coord.lng);
+    if (addr) {
+      if (target === "pickup") setPickup(addr); else setDropoff(addr);
+    }
   }
 
   async function placeOrder() {
@@ -156,7 +235,7 @@ function NewOrder() {
         .from("orders")
         .insert({
           customer_id: authedUser.id,
-          delivery_type: delivery,
+          delivery_type: quote.serviceType === "MOTORCYCLE" ? "same_day" : "standard",
           pickup_address: pickup,
           delivery_address: dropoff,
           notes,
@@ -306,33 +385,104 @@ function NewOrder() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-3 font-semibold">Logistics</h2>
-            <div className="space-y-3">
-              <div>
-                <Label>Pickup address</Label>
-                <Input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Your address" />
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold flex items-center gap-2"><MapPin className="h-4 w-4" />Logistics — pick route on map</h2>
+              <div className="flex gap-1 rounded-md border p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setMapMode("pickup")}
+                  className={cn("px-2.5 py-1 rounded transition-colors", mapMode === "pickup" ? "bg-primary text-primary-foreground" : "hover:bg-accent/40")}
+                >Set pickup</button>
+                <button
+                  type="button"
+                  onClick={() => setMapMode("dropoff")}
+                  className={cn("px-2.5 py-1 rounded transition-colors", mapMode === "dropoff" ? "bg-primary text-primary-foreground" : "hover:bg-accent/40")}
+                >Set drop-off</button>
               </div>
-              <div>
-                <Label>Drop-off (lab)</Label>
-                <Input value={dropoff} onChange={(e) => setDropoff(e.target.value)} />
-              </div>
-              <div>
-                <Label>Service lane</Label>
-                <RadioGroup value={delivery} onValueChange={(v) => { setDelivery(v as any); setQuote(null); }} className="flex gap-6 pt-1">
-                  <label className="flex items-center gap-2"><RadioGroupItem value="standard" />Standard (nationwide courier)</label>
-                  <label className="flex items-center gap-2"><RadioGroupItem value="same_day" />Same-day (Klang Valley, before {SAME_DAY_CUTOFF_HOUR}:00)</label>
-                </RadioGroup>
-                {sameDayBlocked && (
-                  <p className="mt-1 text-xs text-destructive">Same-day cutoff has passed. Choose Standard.</p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <AddressSearchInput
+                label="Pickup address"
+                value={pickup}
+                onChange={setPickup}
+                onSearch={() => geocodeAndSet("pickup", pickup)}
+                placeholder="Search or click map"
+                hasMarker={!!pickupCoord}
+              />
+              <AddressSearchInput
+                label="Drop-off address"
+                value={dropoff}
+                onChange={setDropoff}
+                onSearch={() => geocodeAndSet("dropoff", dropoff)}
+                placeholder="Lab or destination"
+                hasMarker={!!dropoffCoord}
+              />
+            </div>
+
+            <div className="mt-3">
+              <Suspense fallback={<div className="flex h-[420px] items-center justify-center rounded-lg border bg-muted/30"><Loader2 className="h-5 w-5 animate-spin" /></div>}>
+                <DeliveryMap
+                  pickup={pickupCoord}
+                  dropoff={dropoffCoord}
+                  routeGeometry={routeGeometry}
+                  onPickupChange={(c) => handleMapPick("pickup", c)}
+                  onDropoffChange={(c) => handleMapPick("dropoff", c)}
+                  mode={mapMode}
+                />
+              </Suspense>
+            </div>
+
+            {(distanceKm != null || routeBusy) && (
+              <div className="mt-3 flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
+                {routeBusy ? (
+                  <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Calculating route…</span>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1.5"><RouteIcon className="h-4 w-4 text-primary" /><strong>{distanceKm?.toFixed(1)} km</strong></span>
+                    <span className="flex items-center gap-1.5"><Clock className="h-4 w-4 text-primary" /><strong>{durationMin} min</strong> drive</span>
+                  </>
                 )}
               </div>
-              <Button variant="outline" onClick={fetchQuote} disabled={busy || sameDayBlocked}>Get Lalamove quote</Button>
-              {quote && (
-                <div className="text-sm text-muted-foreground">
-                  Quote {quote.quoteId}: RM{quote.amount} · ETA {quote.etaMinutes} min
+            )}
+
+            {quotes.length > 0 && (
+              <div className="mt-4">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Live Lalamove quotes</Label>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {quotes.map((q) => {
+                    const Icon = q.serviceType === "MOTORCYCLE" ? Bike : q.serviceType === "CAR" ? Car : Truck;
+                    const selected = quote?.quoteId === q.quoteId;
+                    const blocked = q.serviceType === "MOTORCYCLE" && sameDayBlocked;
+                    return (
+                      <button
+                        key={q.quoteId}
+                        type="button"
+                        disabled={blocked}
+                        onClick={() => setQuote(q)}
+                        className={cn(
+                          "rounded-lg border p-3 text-left transition-all",
+                          selected ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "hover:border-primary/40 hover:bg-accent/20",
+                          blocked && "opacity-50 cursor-not-allowed",
+                        )}
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Icon className="h-4 w-4" />{q.serviceType.charAt(0) + q.serviceType.slice(1).toLowerCase()}
+                        </div>
+                        <div className="mt-1 text-lg font-bold">RM{q.amount.toFixed(2)}</div>
+                        <div className="text-xs text-muted-foreground">~{q.etaMinutes} min ETA</div>
+                        {blocked && <div className="mt-1 text-[10px] text-destructive">Cutoff passed</div>}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
+                {quotingBusy && <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 className="h-3 w-3 animate-spin" />Refreshing quotes…</p>}
+              </div>
+            )}
+
+            {!pickupCoord && !dropoffCoord && (
+              <p className="mt-3 text-xs text-muted-foreground">Click the map to drop a pickup pin, then switch to "Set drop-off" — quotes will appear automatically.</p>
+            )}
           </Card>
 
           <Card className="p-5">
@@ -355,5 +505,34 @@ function NewOrder() {
         </Card>
       </div>
     </PortalShell>
+  );
+}
+
+function AddressSearchInput({ label, value, onChange, onSearch, placeholder, hasMarker }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSearch: () => void;
+  placeholder?: string;
+  hasMarker: boolean;
+}) {
+  return (
+    <div>
+      <Label className="flex items-center gap-1.5 text-xs">
+        <MapPin className={cn("h-3 w-3", hasMarker ? "text-primary" : "text-muted-foreground")} />
+        {label}
+      </Label>
+      <div className="mt-1 flex gap-1.5">
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSearch(); } }}
+          placeholder={placeholder}
+        />
+        <Button type="button" variant="outline" size="icon" onClick={onSearch} title="Search & place pin">
+          <Search className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }

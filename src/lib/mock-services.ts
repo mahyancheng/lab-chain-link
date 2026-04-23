@@ -24,11 +24,11 @@ export async function getLalamoveQuote(params: {
   pickup: string;
   dropoff: string;
   deliveryType: "same_day" | "standard";
+  distanceKm?: number;
 }): Promise<LalamoveQuote> {
-  // Map old "same_day"/"standard" to a Lalamove service type
   const serviceType = params.deliveryType === "same_day" ? "MOTORCYCLE" : "VAN";
   const r = await getLalamoveQuoteFn({
-    data: { pickup: params.pickup, dropoff: params.dropoff, serviceType },
+    data: { pickup: params.pickup, dropoff: params.dropoff, serviceType, distanceKm: params.distanceKm },
   });
   return {
     quoteId: r.quotationId,
@@ -40,6 +40,29 @@ export async function getLalamoveQuote(params: {
     recipientStopId: r.recipientStopId,
     expiresAt: r.expiresAt,
   };
+}
+
+export async function getMultiServiceQuotes(params: {
+  pickup: string;
+  dropoff: string;
+  distanceKm: number;
+}): Promise<LalamoveQuote[]> {
+  const services: Array<"MOTORCYCLE" | "CAR" | "VAN"> = ["MOTORCYCLE", "CAR", "VAN"];
+  const results = await Promise.all(
+    services.map((serviceType) =>
+      getLalamoveQuoteFn({ data: { pickup: params.pickup, dropoff: params.dropoff, serviceType, distanceKm: params.distanceKm } }),
+    ),
+  );
+  return results.map((r) => ({
+    quoteId: r.quotationId,
+    amount: r.priceTotal,
+    currency: r.currency,
+    etaMinutes: r.etaMinutes,
+    serviceType: r.serviceType,
+    senderStopId: r.senderStopId,
+    recipientStopId: r.recipientStopId,
+    expiresAt: r.expiresAt,
+  }));
 }
 
 export async function bookLalamove(
