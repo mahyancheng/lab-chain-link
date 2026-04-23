@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Save, Bookmark } from "lucide-react";
 import { toast } from "sonner";
-import { getLalamoveQuote, bookLalamove, processRazorpayPayment } from "@/lib/mock-services";
+import { getLalamoveQuote, bookLalamove, processRazorpayPayment, type LalamoveQuote } from "@/lib/mock-services";
 import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/portal/new")({
